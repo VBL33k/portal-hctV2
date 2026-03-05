@@ -90,18 +90,20 @@ passport.deserializeUser((obj, done) => done(null, obj))
 router.get('/discord', passport.authenticate('discord'))
 
 // Callback après auth Discord
-router.get('/discord/callback',
-  passport.authenticate('discord', { failureRedirect: '/login?error=auth' }),
-  (req, res) => {
-    // Générer un token éphémère et stocker l'utilisateur
-    const token = randomUUID()
-    pendingTokens.set(token, { user: req.user, expires: Date.now() + 60_000 })
+router.get('/discord/callback', (req, res, next) => {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
 
-    // Rediriger le frontend avec le token dans l'URL (pas de Set-Cookie ici)
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+  passport.authenticate('discord', (err, user) => {
+    if (err || !user) {
+      console.error('[AUTH CALLBACK] Erreur:', err?.message || 'no user')
+      return res.redirect(`${frontendUrl}/login?error=auth`)
+    }
+
+    const token = randomUUID()
+    pendingTokens.set(token, { user, expires: Date.now() + 60_000 })
     res.redirect(`${frontendUrl}/auth/callback?token=${token}`)
-  }
-)
+  })(req, res, next)
+})
 
 // Échange du token contre une session (appelé par le frontend via fetch)
 router.get('/exchange', async (req, res) => {

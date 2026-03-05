@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
 import Layout from '../components/Layout.jsx'
 
@@ -35,20 +35,8 @@ const ACTION_COLORS = {
   MEMBER_DEMOTED:   '#f97316',
 }
 
-function getInitials(prenom, nom) {
-  const p = prenom?.[0]?.toUpperCase() || ''
-  const n = nom?.[0]?.toUpperCase() || ''
-  return (p + n) || '?'
-}
-
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
-const IconCamera = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-    <circle cx="12" cy="13" r="4"/>
-  </svg>
-)
 const IconUser = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -122,16 +110,8 @@ function SettingsSection({ icon, title, children }) {
 export default function SettingsPage() {
   const { user } = useAuth()
 
-  // Data from server
   const [serverData, setServerData]   = useState(null)
   const [loadingData, setLoadingData] = useState(true)
-
-  // Photo
-  const [photoPreview, setPhotoPreview]   = useState(null)
-  const [photoFile, setPhotoFile]         = useState(null)
-  const [uploadingPhoto, setUploadingPhoto] = useState(false)
-  const [photoMsg, setPhotoMsg]           = useState(null)
-  const fileInputRef = useRef(null)
 
   // Identity
   const [prenom, setPrenom] = useState('')
@@ -164,42 +144,6 @@ export default function SettingsPage() {
 
   useEffect(() => { loadSettings() }, [loadSettings])
 
-  // ── Photo ───────────────────────────────────────────────────────────────────
-
-  function handlePhotoChange(e) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setPhotoFile(file)
-    setPhotoMsg(null)
-    const reader = new FileReader()
-    reader.onload = ev => setPhotoPreview(ev.target.result)
-    reader.readAsDataURL(file)
-  }
-
-  async function handlePhotoUpload() {
-    if (!photoFile) return
-    setUploadingPhoto(true)
-    setPhotoMsg(null)
-    const form = new FormData()
-    form.append('photo', photoFile)
-    try {
-      const r = await fetch(`${API}/api/settings/me/photo`, {
-        method: 'POST',
-        credentials: 'include',
-        body: form,
-      })
-      const data = await r.json()
-      if (!r.ok) throw new Error(data.error || 'Erreur upload')
-      setPhotoMsg({ type: 'ok', text: 'Photo mise à jour ✓' })
-      setPhotoFile(null)
-      setServerData(prev => ({ ...prev, photoUrl: data.photoUrl }))
-    } catch (err) {
-      setPhotoMsg({ type: 'err', text: err.message })
-    } finally {
-      setUploadingPhoto(false)
-    }
-  }
-
   // ── Identity ────────────────────────────────────────────────────────────────
 
   async function handleSaveIdentity(e) {
@@ -217,6 +161,7 @@ export default function SettingsPage() {
       if (!r.ok) throw new Error(data.error || 'Erreur sauvegarde')
       setPrenom(data.prenom || '')
       setNom(data.nom || '')
+      setServerData(prev => ({ ...prev, nom: data.nom, prenom: data.prenom }))
       setIdMsg({ type: 'ok', text: 'Identité mise à jour. Pseudo Discord modifié.' })
     } catch (err) {
       setIdMsg({ type: 'err', text: err.message })
@@ -266,7 +211,7 @@ export default function SettingsPage() {
       const url  = URL.createObjectURL(blob)
       const a    = document.createElement('a')
       a.href     = url
-      a.download = `contrat-travail-hct.docx`
+      a.download = 'contrat-travail-hct.pdf'
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -280,235 +225,194 @@ export default function SettingsPage() {
 
   // ── Derived ─────────────────────────────────────────────────────────────────
 
-  const currentPhoto = photoPreview || serverData?.photoUrl || user?.avatar
-  const hasAddress   = !!(serverData?.adresse?.trim())
-  const hasIdentity  = !!(serverData?.nom?.trim() && serverData?.prenom?.trim())
-
-  const initials = getInitials(
-    serverData?.prenom || user?.prenom,
-    serverData?.nom    || user?.nom,
-  )
+  const hasAddress  = !!(serverData?.adresse?.trim())
+  const hasIdentity = !!(serverData?.nom?.trim() && serverData?.prenom?.trim())
+  const avatarUrl   = user?.avatar
 
   return (
     <Layout title="Paramètres">
       <div className="sett-page">
 
-        {/* ── Photo de profil ── */}
-        <SettingsSection icon={<IconCamera />} title="Photo de profil">
-          <div className="sett-photo-row">
-            <div className="sett-avatar-wrap">
-              {currentPhoto
-                ? <img className="sett-avatar-img" src={currentPhoto} alt="Photo de profil" />
-                : <div className="sett-avatar-initials">{initials}</div>
+        {/* ── Colonne gauche : Identité ── */}
+        <div className="sett-col-left">
+          <SettingsSection icon={<IconUser />} title="Identité">
+
+            {/* Avatar Discord (lecture seule) */}
+            <div className="sett-avatar-row">
+              {avatarUrl
+                ? <img className="sett-avatar-img" src={avatarUrl} alt="Avatar Discord" />
+                : <div className="sett-avatar-initials">
+                    {(user?.prenom?.[0] || user?.username?.[0] || '?').toUpperCase()}
+                  </div>
               }
-              <button
-                className="sett-avatar-overlay"
-                onClick={() => fileInputRef.current?.click()}
-                title="Changer la photo"
-              >
-                <IconCamera />
-              </button>
+              <div className="sett-avatar-meta">
+                <div className="sett-avatar-name">{user?.name || user?.username}</div>
+                {user?.poste && <div className="sett-avatar-poste">{user.poste}</div>}
+              </div>
             </div>
 
-            <div className="sett-photo-info">
-              <div className="sett-photo-hint">JPG, PNG ou WebP · max 3 Mo</div>
-              {photoFile && (
-                <div className="sett-photo-file">
-                  {photoFile.name}
-                </div>
-              )}
-              <div className="sett-photo-actions">
-                <button
-                  className="sett-btn-outline"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  Choisir une photo
-                </button>
-                {photoFile && (
-                  <button
-                    className="sett-btn-primary"
-                    onClick={handlePhotoUpload}
-                    disabled={uploadingPhoto}
-                  >
-                    {uploadingPhoto ? 'Upload…' : 'Enregistrer'}
-                  </button>
-                )}
-              </div>
-              {photoMsg && (
-                <div className={`sett-msg sett-msg--${photoMsg.type}`}>
-                  {photoMsg.type === 'ok' ? <IconCheck /> : <IconAlertTriangle />}
-                  {photoMsg.text}
-                </div>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                onChange={handlePhotoChange}
-              />
-            </div>
-          </div>
-        </SettingsSection>
-
-        {/* ── Identité ── */}
-        <SettingsSection icon={<IconUser />} title="Identité">
-          <form className="sett-form" onSubmit={handleSaveIdentity}>
-            <div className="sett-fields-row">
-              <div className="sett-field">
-                <label className="sett-label">Prénom</label>
-                <input
-                  className="sett-input"
-                  type="text"
-                  value={prenom}
-                  onChange={e => { setPrenom(e.target.value); setIdMsg(null) }}
-                  placeholder="Jean"
-                  disabled={loadingData}
-                />
-              </div>
-              <div className="sett-field">
-                <label className="sett-label">Nom</label>
-                <input
-                  className="sett-input"
-                  type="text"
-                  value={nom}
-                  onChange={e => { setNom(e.target.value.toUpperCase()); setIdMsg(null) }}
-                  placeholder="DUPONT"
-                  disabled={loadingData}
-                />
-              </div>
-            </div>
-            <div className="sett-discord-note">
-              <IconDiscord />
-              Ce changement modifie ton pseudo sur le serveur Discord
-            </div>
-            {idMsg && (
-              <div className={`sett-msg sett-msg--${idMsg.type}`}>
-                {idMsg.type === 'ok' ? <IconCheck /> : <IconAlertTriangle />}
-                {idMsg.text}
-              </div>
-            )}
-            <div className="sett-form-footer">
-              <button
-                type="submit"
-                className="sett-btn-primary"
-                disabled={savingId || loadingData || !prenom.trim() || !nom.trim()}
-              >
-                <IconSave /> {savingId ? 'Sauvegarde…' : 'Sauvegarder'}
-              </button>
-            </div>
-          </form>
-        </SettingsSection>
-
-        {/* ── Adresse ── */}
-        <SettingsSection icon={<IconHome />} title="Adresse postale">
-          <form className="sett-form" onSubmit={handleSaveAddress}>
-            <div className="sett-field">
-              <label className="sett-label">Adresse complète</label>
-              <textarea
-                className="sett-input sett-textarea"
-                value={adresse}
-                onChange={e => { setAdresse(e.target.value); setAddrMsg(null) }}
-                placeholder="123 rue de la Paix, 75001 Paris"
-                rows={3}
-                disabled={loadingData}
-              />
-              <div className="sett-field-hint">
-                Nécessaire pour le téléchargement du contrat de travail
-              </div>
-            </div>
-            {addrMsg && (
-              <div className={`sett-msg sett-msg--${addrMsg.type}`}>
-                {addrMsg.type === 'ok' ? <IconCheck /> : <IconAlertTriangle />}
-                {addrMsg.text}
-              </div>
-            )}
-            <div className="sett-form-footer">
-              <button
-                type="submit"
-                className="sett-btn-primary"
-                disabled={savingAddr || loadingData}
-              >
-                <IconSave /> {savingAddr ? 'Sauvegarde…' : 'Sauvegarder'}
-              </button>
-            </div>
-          </form>
-        </SettingsSection>
-
-        {/* ── Contrat de travail ── */}
-        <SettingsSection icon={<IconFile />} title="Contrat de travail">
-          <div className="sett-contract">
-            <div className="sett-contract-info">
-              <div className="sett-contract-title">Contrat d'engagement HCT Healthcare</div>
-              <div className="sett-contract-desc">
-                Téléchargez votre contrat de travail pré-rempli avec vos informations.
-                {!hasAddress && (
-                  <span className="sett-contract-warn">
-                    {' '}<IconAlertTriangle /> Renseignez votre adresse pour débloquer le téléchargement.
-                  </span>
-                )}
-                {hasAddress && !hasIdentity && (
-                  <span className="sett-contract-warn">
-                    {' '}<IconAlertTriangle /> Renseignez votre nom et prénom pour débloquer.
-                  </span>
-                )}
-              </div>
-            </div>
-            {contractErr && (
-              <div className="sett-msg sett-msg--err" style={{ marginBottom: 12 }}>
-                <IconAlertTriangle /> {contractErr}
-              </div>
-            )}
-            <button
-              className={`sett-btn-contract${hasAddress && hasIdentity ? '' : ' sett-btn-contract--locked'}`}
-              onClick={handleDownloadContract}
-              disabled={!hasAddress || !hasIdentity || downloading}
-              title={!hasAddress ? 'Renseignez votre adresse pour débloquer' : !hasIdentity ? 'Renseignez votre nom et prénom' : 'Télécharger votre contrat'}
-            >
-              <IconDownload />
-              {downloading ? 'Génération…' : 'Télécharger le contrat (.docx)'}
-            </button>
-          </div>
-        </SettingsSection>
-
-        {/* ── Mon activité ── */}
-        <SettingsSection icon={<IconActivity />} title="Mon activité">
-          {loadingData ? (
-            <div className="sett-logs-skeleton">
-              {[1,2,3,4].map(i => (
-                <div key={i} className="sett-log-skeleton-row">
-                  <div className="sett-skeleton" style={{ width: 9, height: 9, borderRadius: '50%' }} />
-                  <div>
-                    <div className="sett-skeleton" style={{ width: 160, height: 13 }} />
-                    <div className="sett-skeleton" style={{ width: 110, height: 11, marginTop: 4 }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : serverData?.logs?.length ? (
-            <div className="sett-logs">
-              {serverData.logs.map((entry, i) => (
-                <div key={i} className="sett-log-entry">
-                  <div
-                    className="sett-log-dot"
-                    style={{ background: ACTION_COLORS[entry.action] || 'rgba(255,255,255,0.3)' }}
+            <form className="sett-form" onSubmit={handleSaveIdentity}>
+              <div className="sett-fields-row">
+                <div className="sett-field">
+                  <label className="sett-label">Prénom</label>
+                  <input
+                    className="sett-input"
+                    type="text"
+                    value={prenom}
+                    onChange={e => { setPrenom(e.target.value); setIdMsg(null) }}
+                    placeholder="Jean"
+                    disabled={loadingData}
                   />
-                  <div className="sett-log-content">
-                    <div className="sett-log-action">
-                      {ACTION_LABELS[entry.action] || entry.action}
-                      {entry.details && (
-                        <span className="sett-log-details"> — {entry.details}</span>
-                      )}
-                    </div>
-                    <div className="sett-log-time">{fmtDate(entry.timestamp)}</div>
-                  </div>
                 </div>
-              ))}
+                <div className="sett-field">
+                  <label className="sett-label">Nom</label>
+                  <input
+                    className="sett-input"
+                    type="text"
+                    value={nom}
+                    onChange={e => { setNom(e.target.value); setIdMsg(null) }}
+                    placeholder="Dupont"
+                    disabled={loadingData}
+                  />
+                </div>
+              </div>
+              <div className="sett-discord-note">
+                <IconDiscord />
+                Ce changement modifie ton pseudo sur le serveur Discord
+              </div>
+              {idMsg && (
+                <div className={`sett-msg sett-msg--${idMsg.type}`}>
+                  {idMsg.type === 'ok' ? <IconCheck /> : <IconAlertTriangle />}
+                  {idMsg.text}
+                </div>
+              )}
+              <div className="sett-form-footer">
+                <button
+                  type="submit"
+                  className="sett-btn-primary"
+                  disabled={savingId || loadingData || !prenom.trim() || !nom.trim()}
+                >
+                  <IconSave /> {savingId ? 'Sauvegarde…' : 'Sauvegarder'}
+                </button>
+              </div>
+            </form>
+          </SettingsSection>
+        </div>
+
+        {/* ── Colonne droite : Adresse + Contrat ── */}
+        <div className="sett-col-right">
+
+          <SettingsSection icon={<IconHome />} title="Adresse postale">
+            <form className="sett-form" onSubmit={handleSaveAddress}>
+              <div className="sett-field">
+                <label className="sett-label">Adresse complète</label>
+                <textarea
+                  className="sett-input sett-textarea"
+                  value={adresse}
+                  onChange={e => { setAdresse(e.target.value); setAddrMsg(null) }}
+                  placeholder="137th Fox Hollow Avenue, Townsend, Tennessee"
+                  rows={3}
+                  disabled={loadingData}
+                />
+                <div className="sett-field-hint">
+                  Nécessaire pour le téléchargement du contrat de travail
+                </div>
+              </div>
+              {addrMsg && (
+                <div className={`sett-msg sett-msg--${addrMsg.type}`}>
+                  {addrMsg.type === 'ok' ? <IconCheck /> : <IconAlertTriangle />}
+                  {addrMsg.text}
+                </div>
+              )}
+              <div className="sett-form-footer">
+                <button
+                  type="submit"
+                  className="sett-btn-primary"
+                  disabled={savingAddr || loadingData}
+                >
+                  <IconSave /> {savingAddr ? 'Sauvegarde…' : 'Sauvegarder'}
+                </button>
+              </div>
+            </form>
+          </SettingsSection>
+
+          <SettingsSection icon={<IconFile />} title="Contrat de travail">
+            <div className="sett-contract">
+              <div className="sett-contract-info">
+                <div className="sett-contract-title">Contrat d'engagement HCT Healthcare</div>
+                <div className="sett-contract-desc">
+                  Téléchargez votre contrat pré-rempli au format PDF.
+                  {!hasAddress && (
+                    <span className="sett-contract-warn">
+                      {' '}<IconAlertTriangle /> Renseignez votre adresse pour débloquer.
+                    </span>
+                  )}
+                  {hasAddress && !hasIdentity && (
+                    <span className="sett-contract-warn">
+                      {' '}<IconAlertTriangle /> Renseignez votre nom et prénom pour débloquer.
+                    </span>
+                  )}
+                </div>
+              </div>
+              {contractErr && (
+                <div className="sett-msg sett-msg--err" style={{ marginBottom: 12 }}>
+                  <IconAlertTriangle /> {contractErr}
+                </div>
+              )}
+              <button
+                className={`sett-btn-contract${hasAddress && hasIdentity ? '' : ' sett-btn-contract--locked'}`}
+                onClick={handleDownloadContract}
+                disabled={!hasAddress || !hasIdentity || downloading}
+                title={!hasAddress ? 'Renseignez votre adresse' : !hasIdentity ? 'Renseignez votre nom et prénom' : 'Télécharger votre contrat'}
+              >
+                <IconDownload />
+                {downloading ? 'Génération…' : 'Télécharger le contrat (PDF)'}
+              </button>
             </div>
-          ) : (
-            <div className="sett-logs-empty">Aucune activité enregistrée</div>
-          )}
-        </SettingsSection>
+          </SettingsSection>
+
+        </div>
+
+        {/* ── Pleine largeur : Activité ── */}
+        <div className="sett-row-full">
+          <SettingsSection icon={<IconActivity />} title="Mon activité">
+            {loadingData ? (
+              <div className="sett-logs-skeleton">
+                {[1,2,3,4].map(i => (
+                  <div key={i} className="sett-log-skeleton-row">
+                    <div className="sett-skeleton" style={{ width: 9, height: 9, borderRadius: '50%' }} />
+                    <div>
+                      <div className="sett-skeleton" style={{ width: 160, height: 13 }} />
+                      <div className="sett-skeleton" style={{ width: 110, height: 11, marginTop: 4 }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : serverData?.logs?.length ? (
+              <div className="sett-logs">
+                {serverData.logs.map((entry, i) => (
+                  <div key={i} className="sett-log-entry">
+                    <div
+                      className="sett-log-dot"
+                      style={{ background: ACTION_COLORS[entry.action] || 'rgba(255,255,255,0.3)' }}
+                    />
+                    <div className="sett-log-content">
+                      <div className="sett-log-action">
+                        {ACTION_LABELS[entry.action] || entry.action}
+                        {entry.details && (
+                          <span className="sett-log-details"> — {entry.details}</span>
+                        )}
+                      </div>
+                      <div className="sett-log-time">{fmtDate(entry.timestamp)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="sett-logs-empty">Aucune activité enregistrée</div>
+            )}
+          </SettingsSection>
+        </div>
 
       </div>
     </Layout>

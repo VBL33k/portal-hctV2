@@ -2220,12 +2220,17 @@ a.nav-item { text-decoration: none; }
    SETTINGS PAGE  (.sett-*)
 ═══════════════════════════════════════════════════════════════ */
 
+/* ── Layout 2 colonnes ── */
 .sett-page {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
   gap: 20px;
-  max-width: 760px;
+  width: 100%;
 }
+.sett-col-left  { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; gap: 20px; }
+.sett-col-right { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; gap: 20px; }
+.sett-row-full  { grid-column: 1 / -1; }
 
 /* ── Section card ── */
 .sett-section {
@@ -2263,83 +2268,53 @@ a.nav-item { text-decoration: none; }
   padding: 22px;
 }
 
-/* ── Photo ── */
-.sett-photo-row {
+/* ── Avatar Discord (lecture seule) ── */
+.sett-avatar-row {
   display: flex;
-  align-items: flex-start;
-  gap: 24px;
-}
-.sett-avatar-wrap {
-  position: relative;
-  flex-shrink: 0;
-  width: 80px;
-  height: 80px;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 .sett-avatar-img {
-  width: 80px;
-  height: 80px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid rgba(255,255,255,0.1);
-  display: block;
+  flex-shrink: 0;
 }
 .sett-avatar-initials {
-  width: 80px;
-  height: 80px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   background: linear-gradient(135deg, #4e9bff 0%, #7c5cfc 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 700;
   color: #fff;
-  letter-spacing: 0.02em;
+  flex-shrink: 0;
 }
-.sett-avatar-overlay {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: rgba(0,0,0,0);
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: transparent;
-  transition: background 0.2s, color 0.2s;
-}
-.sett-avatar-overlay:hover {
-  background: rgba(0,0,0,0.55);
-  color: #fff;
-}
-.sett-photo-info {
-  flex: 1;
+.sett-avatar-meta {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding-top: 4px;
+  gap: 3px;
+  min-width: 0;
 }
-.sett-photo-hint {
-  font-size: 12px;
-  color: var(--text-muted, rgba(232,234,240,0.45));
-}
-.sett-photo-file {
-  font-size: 12.5px;
-  color: #4e9bff;
-  background: rgba(78,155,255,0.08);
-  border-radius: 6px;
-  padding: 4px 10px;
-  max-width: 220px;
+.sett-avatar-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #e8eaf0);
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
-.sett-photo-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+.sett-avatar-poste {
+  font-size: 12px;
+  color: var(--text-muted, rgba(232,234,240,0.5));
 }
 
 /* ── Buttons ── */
@@ -2589,9 +2564,11 @@ a.nav-item { text-decoration: none; }
 }
 
 /* ── Responsive ── */
-@media (max-width: 600px) {
-  .sett-photo-row { flex-direction: column; align-items: center; }
-  .sett-photo-info { align-items: center; text-align: center; }
+@media (max-width: 860px) {
+  .sett-page { grid-template-columns: 1fr; }
+  .sett-col-left  { grid-column: 1; grid-row: auto; }
+  .sett-col-right { grid-column: 1; grid-row: auto; }
+  .sett-row-full  { grid-column: 1; }
   .sett-fields-row { grid-template-columns: 1fr; }
   .sett-section-body { padding: 16px; }
 }

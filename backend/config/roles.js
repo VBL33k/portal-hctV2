@@ -100,6 +100,11 @@ function isAdmin(memberRoleIds = []) {
   return getUserLevel(memberRoleIds) >= ROLE_HIERARCHY[ROLE_IDS.DEO]
 }
 
+// Niveau minimum pour créer/gérer des templates BBCode
+function isSupervisor(memberRoleIds = []) {
+  return getUserLevel(memberRoleIds) >= ROLE_HIERARCHY[ROLE_IDS.SHIFT_SPV]
+}
+
 module.exports = {
   ROLE_IDS,
   ROLE_HIERARCHY,
@@ -110,4 +115,5 @@ module.exports = {
   getPosteName,
   isManager,
   isAdmin,
+  isSupervisor,
 }

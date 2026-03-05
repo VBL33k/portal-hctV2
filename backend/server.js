@@ -2,6 +2,7 @@ require('dotenv').config()
 
 const express   = require('express')
 const session   = require('express-session')
+const FileStore = require('session-file-store')(session)
 const passport  = require('passport')
 
 const app = express()
@@ -29,7 +30,7 @@ app.use((req, res, next) => {
   next()
 })
 
-// ─── Anti-cache (empêche Cloudflare de cacher les réponses API) ───────────────
+// ─── Anti-cache ───────────────────────────────────────────────────────────────
 app.use((req, res, next) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
   res.set('Pragma', 'no-cache')
@@ -44,9 +45,15 @@ app.use(express.urlencoded({ extended: true }))
 const isProd = process.env.NODE_ENV === 'production'
 
 app.use(session({
+  store: new FileStore({
+    path:    '/var/www/hct/sessions',
+    ttl:     86400,   // 24h en secondes
+    retries: 0,
+    logFn:   () => {},  // silence les logs
+  }),
   secret: process.env.SESSION_SECRET || 'hct-dev-secret',
-  resave: true,
-  saveUninitialized: true,
+  resave: false,
+  saveUninitialized: false,
   cookie: {
     secure:   isProd,
     httpOnly: true,

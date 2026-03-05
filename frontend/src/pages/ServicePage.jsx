@@ -2,6 +2,13 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
 import Layout from '../components/Layout.jsx'
 
+// Helper: fetch qui force le re-login sur 401
+async function apiFetch(url, options, onUnauth) {
+  const res = await fetch(url, { credentials: 'include', ...options })
+  if (res.status === 401 && onUnauth) { onUnauth(); return null }
+  return res
+}
+
 const API = import.meta.env.VITE_API_URL || ''
 
 // Role IDs with level >= 12 (HDP and above) — mirrors backend config/roles.js
@@ -130,8 +137,11 @@ function StatsRow({ stats, loading }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function ServicePage() {
-  const { user } = useAuth()
+  const { user, checkAuth } = useAuth()
   const isManager = (user?.roles || []).some(r => MANAGER_ROLE_IDS.has(r))
+
+  // Appelé si le backend répond 401 (session expirée) → force un re-check
+  const onUnauth = () => checkAuth()
 
   // View state
   const [tab, setTab] = useState('mine')
@@ -176,8 +186,8 @@ export default function ServicePage() {
   async function fetchMine() {
     setLoading(true)
     try {
-      const res = await fetch(`${API}/api/shifts/mine`, { credentials: 'include' })
-      if (res.ok) setMyData(await res.json())
+      const res = await apiFetch(`${API}/api/shifts/mine`, {}, onUnauth)
+      if (res?.ok) setMyData(await res.json())
     } finally {
       setLoading(false)
     }
@@ -185,8 +195,8 @@ export default function ServicePage() {
 
   async function fetchTeam() {
     try {
-      const res = await fetch(`${API}/api/shifts/overview`, { credentials: 'include' })
-      if (res.ok) setTeamData(await res.json())
+      const res = await apiFetch(`${API}/api/shifts/overview`, {}, onUnauth)
+      if (res?.ok) setTeamData(await res.json())
     } catch {}
   }
 
@@ -201,13 +211,13 @@ export default function ServicePage() {
       const startAt = new Date(`${date}T${startTime}`).toISOString()
       const endAt   = new Date(`${date}T${endTime}`).toISOString()
 
-      const res = await fetch(`${API}/api/shifts/record`, {
+      const res = await apiFetch(`${API}/api/shifts/record`, {
         method: 'POST',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ hospital, startAt, endAt, note: note.trim() || null }),
-      })
+      }, onUnauth)
 
+      if (!res) return // 401 géré par onUnauth
       const data = await res.json()
       if (!res.ok) return setFormError(data.error || "Erreur lors de l'enregistrement.")
 
@@ -228,11 +238,8 @@ export default function ServicePage() {
   async function handleDelete(shiftId) {
     if (!window.confirm('Supprimer ce service définitivement ?')) return
     try {
-      const res = await fetch(`${API}/api/shifts/${shiftId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      })
-      if (res.ok) {
+      const res = await apiFetch(`${API}/api/shifts/${shiftId}`, { method: 'DELETE' }, onUnauth)
+      if (res?.ok) {
         setTeamData(null)
         await fetchMine()
       }
@@ -241,8 +248,8 @@ export default function ServicePage() {
 
   async function openMember(member) {
     try {
-      const res = await fetch(`${API}/api/shifts/overview?userId=${member.userId}`, { credentials: 'include' })
-      if (res.ok) {
+      const res = await apiFetch(`${API}/api/shifts/overview?userId=${member.userId}`, {}, onUnauth)
+      if (res?.ok) {
         const d = await res.json()
         setSelectedMember({ ...member, shifts: d.shifts, stats: d.stats })
       }

@@ -2,12 +2,22 @@ const express = require('express')
 const passport = require('passport')
 const DiscordStrategy = require('passport-discord').Strategy
 const fetch = require('node-fetch')
+const { randomUUID } = require('crypto')
 const { getPosteName } = require('../config/roles.js')
 
 const router = express.Router()
 
 const GUILD_ID = process.env.DISCORD_GUILD_ID || '1435626232749232181'
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN
+
+// Tokens éphémères (60s) pour contourner le problème Set-Cookie sur redirects Cloudflare
+const pendingTokens = new Map()
+setInterval(() => {
+  const now = Date.now()
+  for (const [token, data] of pendingTokens) {
+    if (data.expires < now) pendingTokens.delete(token)
+  }
+}, 30_000)
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -83,14 +93,36 @@ router.get('/discord', passport.authenticate('discord'))
 router.get('/discord/callback',
   passport.authenticate('discord', { failureRedirect: '/login?error=auth' }),
   (req, res) => {
+    // Générer un token éphémère et stocker l'utilisateur
+    const token = randomUUID()
+    pendingTokens.set(token, { user: req.user, expires: Date.now() + 60_000 })
+
+    // Rediriger le frontend avec le token dans l'URL (pas de Set-Cookie ici)
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
-    // Forcer la sauvegarde de session AVANT le redirect (bug Passport classique)
-    req.session.save((err) => {
-      if (err) console.error('Session save error:', err)
-      res.redirect(`${frontendUrl}/auth/callback`)
-    })
+    res.redirect(`${frontendUrl}/auth/callback?token=${token}`)
   }
 )
+
+// Échange du token contre une session (appelé par le frontend via fetch)
+router.get('/exchange', async (req, res) => {
+  const { token } = req.query
+  if (!token) return res.status(400).json({ error: 'Token manquant' })
+
+  const entry = pendingTokens.get(token)
+  if (!entry || entry.expires < Date.now()) {
+    return res.status(401).json({ error: 'Token invalide ou expiré' })
+  }
+
+  pendingTokens.delete(token)
+
+  req.login(entry.user, (err) => {
+    if (err) return res.status(500).json({ error: 'Erreur login' })
+    req.session.save((err2) => {
+      if (err2) return res.status(500).json({ error: 'Erreur session' })
+      res.json({ user: entry.user })
+    })
+  })
+})
 
 // Infos de l'utilisateur connecté
 router.get('/me', (req, res) => {

@@ -1,6 +1,22 @@
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 
+// SPV+ role IDs (Shift Supervisor et supérieurs)
+const SPV_ROLE_IDS = new Set([
+  '1140657047126425660', // SHIFT_SPV
+  '809086773326118952',  // HDP
+  '805518674806046733',  // DEPUTY_CHIEF
+  '805481782119104522',  // CHIEF
+  '805551419905015818',  // DEO
+  '805508029151313921',  // CEO
+  '1377632925939666974', // DRH
+  '1407313203326877696', // RH_SIMPLE (level 13 same as deputy)
+])
+
+function isSupervisor(user) {
+  return (user?.roles || []).some(r => SPV_ROLE_IDS.has(r))
+}
+
 const LOGO_ICON = 'https://www.zupimages.net/up/23/09/6yf5.png'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -68,9 +84,13 @@ const IconLogout = () => (
 // ─── Navigation config ────────────────────────────────────────────────────────
 
 const NAV_LINKS = [
-  { to: '/',         icon: <IconGrid />,     label: 'Tableau de bord', end: true },
-  { to: '/services', icon: <IconHeart />,    label: 'Prise de service' },
-  { to: '/bbcode',   icon: <IconFileCode />, label: 'BBCode / Rapports' },
+  { to: '/',               icon: <IconGrid />,     label: 'Tableau de bord', end: true },
+  { to: '/services',       icon: <IconHeart />,    label: 'Prise de service' },
+  { to: '/bbcode/fill',    icon: <IconFileCode />, label: 'Remplir un rapport' },
+]
+
+const NAV_LINKS_SPV = [
+  { to: '/bbcode/builder', icon: <IconBook />,     label: 'Créateur de templates' },
 ]
 
 const NAV_DISABLED = [
@@ -87,6 +107,7 @@ const NAV_DISABLED = [
 export default function Layout({ title, children }) {
   const { user, logout } = useAuth()
   const initials = (user?.prenom?.[0] || user?.username?.[0] || '?').toUpperCase()
+  const canBuild = isSupervisor(user)
 
   return (
     <div className="dashboard">
@@ -116,6 +137,17 @@ export default function Layout({ title, children }) {
               key={item.to}
               to={item.to}
               end={item.end}
+              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+            >
+              {item.icon}
+              {item.label}
+            </NavLink>
+          ))}
+
+          {canBuild && NAV_LINKS_SPV.map(item => (
+            <NavLink
+              key={item.to}
+              to={item.to}
               className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
             >
               {item.icon}

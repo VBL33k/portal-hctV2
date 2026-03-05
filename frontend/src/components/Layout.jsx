@@ -116,7 +116,10 @@ const NAV_DISABLED = [
   { icon: <IconCalendar />, label: 'Planning' },
   { icon: <IconBook />,     label: 'Formations' },
   { icon: <IconChart />,    label: 'Statistiques' },
-  { icon: <IconSettings />, label: 'Paramètres' },
+]
+
+const NAV_LINKS_ALL = [
+  { to: '/parametres', icon: <IconSettings />, label: 'Paramètres' },
 ]
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -190,6 +193,17 @@ export default function Layout({ title, children }) {
               {item.label}
               <span className="nav-soon">BIENTÔT</span>
             </div>
+          ))}
+
+          {NAV_LINKS_ALL.map(item => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+            >
+              {item.icon}
+              {item.label}
+            </NavLink>
           ))}
         </nav>
 

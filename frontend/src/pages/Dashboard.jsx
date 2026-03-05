@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import Layout from '../components/Layout.jsx'
@@ -27,6 +28,21 @@ function isSupervisor(user) {
 }
 function isFullAdmin(user) {
   return (user?.roles || []).some(r => FULL_ADMIN_ROLE_IDS.has(r))
+}
+
+function formatLastShift(shift) {
+  if (!shift) return '—'
+  // Use startLocal (e.g. "2024-03-01 14:30") if available, fallback to ISO
+  const raw = shift.startLocal || shift.startAt
+  const date = new Date(shift.startAt)
+  if (isNaN(date)) return '—'
+  const diff = Math.floor((Date.now() - date) / 1000)
+  if (diff < 3600)   return `il y a ${Math.max(1, Math.floor(diff / 60))} min`
+  if (diff < 86400)  return `il y a ${Math.floor(diff / 3600)}h`
+  const days = Math.floor(diff / 86400)
+  if (days === 1)    return 'Hier'
+  if (days < 7)      return `il y a ${days}j`
+  return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
 }
 
 function getGreeting() {
@@ -119,6 +135,14 @@ export default function Dashboard() {
   const navigate  = useNavigate()
   const greeting  = getGreeting()
 
+  const [lastShift, setLastShift] = useState(null)
+  useEffect(() => {
+    fetch('/api/shifts/mine', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.stats?.lastShift) setLastShift(data.stats.lastShift) })
+      .catch(() => {})
+  }, [])
+
   // Personnel est actif pour les full admins — remplace la tuile "soon"
   const MODULES = isFullAdmin(user)
     ? MODULES_BASE.map(m => m.title === 'Personnel' ? { ...m, soon: false, to: '/personnel' } : m)
@@ -157,15 +181,15 @@ export default function Dashboard() {
         <div className="stat-card">
           <div className="stat-icon"><IconClock /></div>
           <div>
-            <div className="stat-val">—</div>
+            <div className="stat-val">{formatLastShift(lastShift)}</div>
             <div className="stat-label">Votre dernier service</div>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-icon"><IconShield /></div>
           <div>
-            <div className="stat-val">{user?.poste ? '✓' : '—'}</div>
-            <div className="stat-label">Accréditation</div>
+            <div className="stat-val">{isSupervisor(user) ? '✓' : '—'}</div>
+            <div className="stat-label">Vue superviseur</div>
           </div>
         </div>
       </div>

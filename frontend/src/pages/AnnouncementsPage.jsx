@@ -111,20 +111,21 @@ function parseSpans(text) {
   s = s.replace(/~~(.+?)~~/g, (_, t) => `<span class="ann-strike">${escapeHtml(t)}</span>`)
 
   // Custom emoji <:name:id> or <a:name:id>
-  s = s.replace(/<a?:(\w+):(\d+)>/g, (_, name, id) => {
-    const ext = _.startsWith('<a:') ? 'gif' : 'webp'
+  s = s.replace(/<(a?):(\w+):(\d+)>/g, (_, animated, name, id) => {
+    const ext = animated === 'a' ? 'gif' : 'webp'
     return `<img class="ann-emoji" src="https://cdn.discordapp.com/emojis/${id}.${ext}?size=32" alt=":${name}:" title=":${name}:" />`
   })
 
   // Unicode emoji — left as-is (browsers render them fine)
 
-  // Mentions <@id> <#id> <@&id>
+  // Mentions <@id> <#id> <@&id> + @everyone / @here
   s = s.replace(/<@!?(\d+)>/g, `<span class="ann-mention">@utilisateur</span>`)
   s = s.replace(/<#(\d+)>/g, `<span class="ann-mention">#salon</span>`)
   s = s.replace(/<@&(\d+)>/g, `<span class="ann-mention">@rôle</span>`)
+  s = s.replace(/@(everyone|here)/g, `<span class="ann-mention ann-mention--global">@$1</span>`)
 
-  // URLs — linkify bare URLs
-  s = s.replace(/(https?:\/\/[^\s<]+)/g, (url) => {
+  // URLs — linkify bare URLs (negative lookbehind: skip URLs inside HTML attributes src="..." href="...")
+  s = s.replace(/(?<![="'])https?:\/\/[^\s<"']+/g, (url) => {
     const safe = escapeHtml(url)
     return `<a class="ann-link" href="${safe}" target="_blank" rel="noopener noreferrer">${safe}</a>`
   })

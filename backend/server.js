@@ -60,8 +60,9 @@ app.use(passport.initialize())
 app.use(passport.session())
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
-app.use('/api/auth',  require('./routes/auth.js'))
-app.use('/api/users', require('./routes/users.js'))
+app.use('/api/auth',   require('./routes/auth.js'))
+app.use('/api/users',  require('./routes/users.js'))
+app.use('/api/shifts', require('./routes/shifts.js'))
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ ok: true, env: process.env.NODE_ENV }))

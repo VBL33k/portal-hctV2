@@ -22,7 +22,5 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
-# Scripts de setup (contiennent des credentials)
-setup_vps.py
-setup_vps2.py
-update_env.py
+# Scripts de setup/deploy (contiennent des credentials)
+*.py

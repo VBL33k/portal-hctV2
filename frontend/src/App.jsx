@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard.jsx'
 import ServicePage from './pages/ServicePage.jsx'
 import BBCodeFillPage from './pages/BBCodeFillPage.jsx'
 import BBCodeBuilderPage from './pages/BBCodeBuilderPage.jsx'
+import PersonnelPage from './pages/PersonnelPage.jsx'
 import AuthCallback from './pages/AuthCallback.jsx'
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
         <Route path="/bbcode" element={<Navigate to="/bbcode/fill" replace />} />
         <Route path="/bbcode/fill" element={<PrivateRoute><BBCodeFillPage /></PrivateRoute>} />
         <Route path="/bbcode/builder" element={<PrivateRoute><BBCodeBuilderPage /></PrivateRoute>} />
+        <Route path="/personnel"      element={<PrivateRoute><PersonnelPage /></PrivateRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AuthProvider>

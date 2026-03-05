@@ -13,8 +13,20 @@ const SPV_ROLE_IDS = new Set([
   '1377632925939666974', // DRH
   '1407313203326877696', // RH_SIMPLE
 ])
+// Full admin role IDs — accès complet (Deputy Chief et supérieurs)
+const FULL_ADMIN_ROLE_IDS = new Set([
+  '805518674806046733',  // DEPUTY_CHIEF
+  '805481782119104522',  // CHIEF
+  '805551419905015818',  // DEO
+  '805508029151313921',  // CEO
+  '1377632925939666974', // DRH
+  '1407313203326877696', // RH_SIMPLE
+])
 function isSupervisor(user) {
   return (user?.roles || []).some(r => SPV_ROLE_IDS.has(r))
+}
+function isFullAdmin(user) {
+  return (user?.roles || []).some(r => FULL_ADMIN_ROLE_IDS.has(r))
 }
 
 function getGreeting() {
@@ -86,12 +98,12 @@ const IconFileCode = () => (
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
-const MODULES = [
+const MODULES_BASE = [
   { icon: <IconHeart />,    title: 'Prise de service',     desc: 'Déclarez vos prises et fins de service au sein du centre médical.', soon: false, to: '/services' },
   { icon: <IconFileCode />, title: 'BBCode / Rapports',    desc: 'Remplissez vos rapports depuis les templates BBCode disponibles.',  soon: false, to: '/bbcode/fill' },
   { icon: <IconCalendar />, title: 'Planning',             desc: 'Consultez et gérez les plannings de permanence du personnel.',       soon: true,  to: null },
   { icon: <IconBell />,     title: 'Annonces',             desc: "Retrouvez toutes les communications officielles de la direction.",   soon: true,  to: null },
-  { icon: <IconUsers />,    title: 'Personnel',            desc: 'Annuaire complet des membres et de leurs fonctions au HCT.',         soon: true,  to: null },
+  { icon: <IconUsers />,    title: 'Personnel',            desc: 'Annuaire complet des membres, logs d\'activité et gestion RH.',      soon: true,  to: null },
   { icon: <IconBook />,     title: 'Formations',           desc: 'Accédez aux modules de formation continue du centre médical.',       soon: true,  to: null },
   { icon: <IconChart />,    title: 'Statistiques',         desc: "Tableaux de bord et métriques d'activité du centre.",                soon: true,  to: null },
 ]
@@ -104,8 +116,14 @@ const MODULES_SPV = [
 
 export default function Dashboard() {
   const { user } = useAuth()
-  const navigate = useNavigate()
-  const greeting = getGreeting()
+  const navigate  = useNavigate()
+  const greeting  = getGreeting()
+
+  // Personnel est actif pour les full admins — remplace la tuile "soon"
+  const MODULES = isFullAdmin(user)
+    ? MODULES_BASE.map(m => m.title === 'Personnel' ? { ...m, soon: false, to: '/personnel' } : m)
+    : MODULES_BASE
+
   const allModules = isSupervisor(user)
     ? [...MODULES, ...MODULES_SPV]
     : MODULES

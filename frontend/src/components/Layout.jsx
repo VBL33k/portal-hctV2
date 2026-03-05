@@ -13,8 +13,22 @@ const SPV_ROLE_IDS = new Set([
   '1407313203326877696', // RH_SIMPLE (level 13 same as deputy)
 ])
 
+// Full admin role IDs (Deputy Chief et supérieurs)
+const FULL_ADMIN_ROLE_IDS = new Set([
+  '805518674806046733',  // DEPUTY_CHIEF
+  '805481782119104522',  // CHIEF
+  '805551419905015818',  // DEO
+  '805508029151313921',  // CEO
+  '1377632925939666974', // DRH
+  '1407313203326877696', // RH_SIMPLE
+])
+
 function isSupervisor(user) {
   return (user?.roles || []).some(r => SPV_ROLE_IDS.has(r))
+}
+
+function isFullAdmin(user) {
+  return (user?.roles || []).some(r => FULL_ADMIN_ROLE_IDS.has(r))
 }
 
 const LOGO_ICON = 'https://www.zupimages.net/up/23/09/6yf5.png'
@@ -93,10 +107,13 @@ const NAV_LINKS_SPV = [
   { to: '/bbcode/builder', icon: <IconBook />,     label: 'Créateur de templates' },
 ]
 
+const NAV_LINKS_ADMIN = [
+  { to: '/personnel', icon: <IconUsers />, label: 'Personnel' },
+]
+
 const NAV_DISABLED = [
   { icon: <IconCalendar />, label: 'Planning' },
   { icon: <IconBell />,     label: 'Annonces' },
-  { icon: <IconUsers />,    label: 'Personnel' },
   { icon: <IconBook />,     label: 'Formations' },
   { icon: <IconChart />,    label: 'Statistiques' },
   { icon: <IconSettings />, label: 'Paramètres' },
@@ -106,8 +123,9 @@ const NAV_DISABLED = [
 
 export default function Layout({ title, children }) {
   const { user, logout } = useAuth()
-  const initials = (user?.prenom?.[0] || user?.username?.[0] || '?').toUpperCase()
-  const canBuild = isSupervisor(user)
+  const initials    = (user?.prenom?.[0] || user?.username?.[0] || '?').toUpperCase()
+  const canBuild    = isSupervisor(user)
+  const canSeeAdmin = isFullAdmin(user)
 
   return (
     <div className="dashboard">
@@ -145,6 +163,17 @@ export default function Layout({ title, children }) {
           ))}
 
           {canBuild && NAV_LINKS_SPV.map(item => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+            >
+              {item.icon}
+              {item.label}
+            </NavLink>
+          ))}
+
+          {canSeeAdmin && NAV_LINKS_ADMIN.map(item => (
             <NavLink
               key={item.to}
               to={item.to}

@@ -291,6 +291,30 @@ body {
   pointer-events: none;
 }
 
+.login-error-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  font-family: var(--font);
+  animation: slideUp 0.3s ease both;
+  margin-bottom: 4px;
+}
+.login-error-banner--access {
+  background: rgba(226,85,40,0.1);
+  border: 1px solid rgba(226,85,40,0.35);
+  color: rgba(255,160,120,0.95);
+}
+.login-error-banner--auth {
+  background: rgba(255,68,68,0.08);
+  border: 1px solid rgba(255,68,68,0.3);
+  color: rgba(255,140,140,0.95);
+}
+.login-error-banner svg { flex-shrink: 0; margin-top: 1px; }
+
 .login-note {
   display: flex;
   align-items: center;

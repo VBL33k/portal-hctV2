@@ -967,10 +967,10 @@ export default function BBCodeBuilderPage() {
           display: flex;
           flex-direction: column;
           gap: 10px;
-          border-right: 1px solid var(--border, rgba(255,255,255,0.08));
+          border-right: 1px solid rgba(255,255,255,0.07);
           padding: 16px 12px;
           overflow-y: auto;
-          background: var(--surface, #0D2240);
+          background: rgba(255,255,255,0.025);
           flex-shrink: 0;
         }
 
@@ -1026,8 +1026,8 @@ export default function BBCodeBuilderPage() {
           gap: 6px;
           padding: 10px 10px;
           border-radius: 8px;
-          border: 1px solid var(--border, rgba(255,255,255,0.08));
-          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.06);
+          background: rgba(255,255,255,0.02);
           cursor: pointer;
           transition: all 0.15s;
         }
@@ -1036,8 +1036,8 @@ export default function BBCodeBuilderPage() {
           background: rgba(226,85,40,0.06);
         }
         .bld-tpl-card.active {
-          border-color: var(--orange, #E25528);
-          background: rgba(226,85,40,0.1);
+          border-color: rgba(226,85,40,0.55);
+          background: rgba(226,85,40,0.07);
         }
 
         .bld-tpl-card-body {

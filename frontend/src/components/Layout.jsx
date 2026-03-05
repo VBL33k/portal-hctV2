@@ -86,7 +86,7 @@ const IconLogout = () => (
 const NAV_LINKS = [
   { to: '/',               icon: <IconGrid />,     label: 'Tableau de bord', end: true },
   { to: '/services',       icon: <IconHeart />,    label: 'Prise de service' },
-  { to: '/bbcode/fill',    icon: <IconFileCode />, label: 'Remplir un rapport' },
+  { to: '/bbcode/fill',    icon: <IconFileCode />, label: 'BBCode' },
 ]
 
 const NAV_LINKS_SPV = [

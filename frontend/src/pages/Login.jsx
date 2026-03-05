@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 
 const API       = import.meta.env.VITE_API_URL || ''
@@ -8,6 +8,8 @@ const LOGO_ICON = 'https://www.zupimages.net/up/23/09/6yf5.png'
 export default function Login() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const errorCode = params.get('error')
 
   useEffect(() => {
     if (user) navigate('/', { replace: true })
@@ -56,6 +58,23 @@ export default function Login() {
           <p className="login-auth-desc">
             Authentifiez-vous via votre compte Discord associé au serveur HCT pour accéder au portail.
           </p>
+
+          {errorCode === 'access' && (
+            <div className="login-error-banner login-error-banner--access">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5L12 1z"/>
+              </svg>
+              Accès refusé — vous n'êtes pas membre du personnel HCT ou votre grade n'est pas reconnu.
+            </div>
+          )}
+          {errorCode === 'auth' && (
+            <div className="login-error-banner login-error-banner--auth">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="0.5" fill="currentColor"/>
+              </svg>
+              Erreur d'authentification Discord. Veuillez réessayer.
+            </div>
+          )}
 
           <button
             className="discord-btn-hct"

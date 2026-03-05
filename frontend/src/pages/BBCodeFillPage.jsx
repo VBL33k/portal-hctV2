@@ -597,16 +597,15 @@ export default function BBCodeFillPage() {
   }
 
   return (
-    <Layout title="Remplir un rapport">
+    <Layout title="BBCode">
       <style>{`
         /* ── Page wrapper ──────────────────────────────────────────────────── */
         .fill-page {
-          max-width: 900px;
-          margin: 0 auto;
+          width: 100%;
           padding: 0 0 120px;
         }
         .fill-page--form {
-          max-width: 760px;
+          /* no max-width — uses full available space */
         }
 
         /* ── Hero (step 1) ─────────────────────────────────────────────────── */
@@ -636,7 +635,7 @@ export default function BBCodeFillPage() {
         }
 
         .fill-cat-card {
-          background: var(--surface, #0D2240);
+          background: rgba(255,255,255,0.025);
           border: 1px solid var(--border, rgba(255,255,255,0.08));
           border-radius: 14px;
           padding: 28px 18px 22px;
@@ -778,7 +777,7 @@ export default function BBCodeFillPage() {
         .fill-tpl-card {
           display: flex;
           align-items: center;
-          background: var(--surface, #0D2240);
+          background: rgba(255,255,255,0.025);
           border: 1px solid var(--border, rgba(255,255,255,0.08));
           border-radius: 12px;
           padding: 20px 22px;
@@ -872,7 +871,7 @@ export default function BBCodeFillPage() {
           margin-top: 24px;
         }
         .fill-section {
-          background: var(--surface, #0D2240);
+          background: rgba(255,255,255,0.025);
           border: 1px solid var(--border, rgba(255,255,255,0.08));
           border-radius: 12px;
           padding: 24px;
@@ -1005,7 +1004,7 @@ export default function BBCodeFillPage() {
           align-items: center;
           justify-content: space-between;
           gap: 16px;
-          background: var(--surface, #0D2240);
+          background: rgba(255,255,255,0.025);
           border: 1px solid var(--border, rgba(255,255,255,0.08));
           border-radius: 12px;
           padding: 14px 20px;
@@ -1113,7 +1112,7 @@ export default function BBCodeFillPage() {
           font-family: Cairo, sans-serif;
         }
         .fill-result {
-          background: var(--surface, #0D2240);
+          background: rgba(255,255,255,0.025);
           border: 1px solid var(--border, rgba(255,255,255,0.08));
           border-radius: 12px;
           overflow: hidden;

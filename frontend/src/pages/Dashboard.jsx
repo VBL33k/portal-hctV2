@@ -2,6 +2,21 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import Layout from '../components/Layout.jsx'
 
+// SPV+ role IDs — pour afficher le module Créateur de templates
+const SPV_ROLE_IDS = new Set([
+  '1140657047126425660', // SHIFT_SPV
+  '809086773326118952',  // HDP
+  '805518674806046733',  // DEPUTY_CHIEF
+  '805481782119104522',  // CHIEF
+  '805551419905015818',  // DEO
+  '805508029151313921',  // CEO
+  '1377632925939666974', // DRH
+  '1407313203326877696', // RH_SIMPLE
+])
+function isSupervisor(user) {
+  return (user?.roles || []).some(r => SPV_ROLE_IDS.has(r))
+}
+
 function getGreeting() {
   const h = new Date().getHours()
   if (h < 6)  return 'BONNE NUIT'
@@ -61,16 +76,28 @@ const IconArrow = () => (
     <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
   </svg>
 )
+const IconFileCode = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <polyline points="14 2 14 8 20 8"/>
+    <polyline points="10 13 8 15 10 17"/><polyline points="14 13 16 15 14 17"/>
+  </svg>
+)
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const MODULES = [
-  { icon: <IconHeart />,    title: 'Prise de service', desc: 'Déclarez vos prises et fins de service au sein du centre médical.', soon: false, to: '/services' },
-  { icon: <IconCalendar />, title: 'Planning',          desc: 'Consultez et gérez les plannings de permanence du personnel.',       soon: true,  to: null },
-  { icon: <IconBell />,     title: 'Annonces',          desc: "Retrouvez toutes les communications officielles de la direction.",   soon: true,  to: null },
-  { icon: <IconUsers />,    title: 'Personnel',         desc: 'Annuaire complet des membres et de leurs fonctions au HCT.',         soon: true,  to: null },
-  { icon: <IconBook />,     title: 'Formations',        desc: 'Accédez aux modules de formation continue du centre médical.',       soon: true,  to: null },
-  { icon: <IconChart />,    title: 'Statistiques',      desc: "Tableaux de bord et métriques d'activité du centre.",                soon: true,  to: null },
+  { icon: <IconHeart />,    title: 'Prise de service',     desc: 'Déclarez vos prises et fins de service au sein du centre médical.', soon: false, to: '/services' },
+  { icon: <IconFileCode />, title: 'BBCode / Rapports',    desc: 'Remplissez vos rapports depuis les templates BBCode disponibles.',  soon: false, to: '/bbcode/fill' },
+  { icon: <IconCalendar />, title: 'Planning',             desc: 'Consultez et gérez les plannings de permanence du personnel.',       soon: true,  to: null },
+  { icon: <IconBell />,     title: 'Annonces',             desc: "Retrouvez toutes les communications officielles de la direction.",   soon: true,  to: null },
+  { icon: <IconUsers />,    title: 'Personnel',            desc: 'Annuaire complet des membres et de leurs fonctions au HCT.',         soon: true,  to: null },
+  { icon: <IconBook />,     title: 'Formations',           desc: 'Accédez aux modules de formation continue du centre médical.',       soon: true,  to: null },
+  { icon: <IconChart />,    title: 'Statistiques',         desc: "Tableaux de bord et métriques d'activité du centre.",                soon: true,  to: null },
+]
+
+const MODULES_SPV = [
+  { icon: <IconBook />, title: 'Créateur de templates', desc: 'Créez et gérez les templates BBCode pour votre équipe.', soon: false, to: '/bbcode/builder' },
 ]
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -79,6 +106,9 @@ export default function Dashboard() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const greeting = getGreeting()
+  const allModules = isSupervisor(user)
+    ? [...MODULES, ...MODULES_SPV]
+    : MODULES
 
   return (
     <Layout title="Tableau de bord">
@@ -125,7 +155,7 @@ export default function Dashboard() {
       {/* Modules */}
       <div className="section-label">MODULES</div>
       <div className="modules-grid">
-        {MODULES.map((m, i) => (
+        {allModules.map((m, i) => (
           <div
             key={i}
             className={`module-card${m.soon ? ' module-card--soon' : ''}`}

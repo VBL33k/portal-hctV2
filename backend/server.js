@@ -81,4 +81,8 @@ app.listen(PORT, () => {
   console.log(`   Environnement : ${process.env.NODE_ENV || 'development'}`)
   console.log(`   Frontend URL  : ${FRONTEND_URL}`)
   console.log(`   Callback URL  : ${process.env.DISCORD_CALLBACK_URL || '(non défini)'}`)
+
+  // Warmup du cache membres Discord (non-bloquant)
+  const { warmupMemberCache } = require('./utils/discord.js')
+  warmupMemberCache().catch(err => console.error('[Discord] Erreur warmup:', err.message))
 })

@@ -3,7 +3,7 @@ const passport = require('passport')
 const DiscordStrategy = require('passport-discord').Strategy
 const { randomUUID } = require('crypto')
 const { getPosteName } = require('../config/roles.js')
-const { fetchGuildMember, parseNickname } = require('../utils/discord.js')
+const { fetchGuildMember, parseNickname, cacheUser } = require('../utils/discord.js')
 
 const router = express.Router()
 
@@ -94,6 +94,8 @@ router.get('/exchange', async (req, res) => {
     if (err) return res.status(500).json({ error: 'Erreur login' })
     req.session.save((err2) => {
       if (err2) return res.status(500).json({ error: 'Erreur session' })
+      // Persist user name so it's available even s'il quitte le serveur plus tard
+      cacheUser(entry.user.discordId, entry.user.name, entry.user.poste)
       res.json({ user: entry.user })
     })
   })

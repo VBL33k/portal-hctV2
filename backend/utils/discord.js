@@ -1,18 +1,45 @@
 const fetch      = require('node-fetch')
+const { readFileSync, writeFileSync, existsSync, mkdirSync } = require('fs')
+const { join }   = require('path')
 const { getPosteName } = require('../config/roles.js')
 
 const GUILD_ID  = process.env.DISCORD_GUILD_ID || '1435626232749232181'
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN
 
-// ─── Cache en mémoire (TTL 10 min) ────────────────────────────────────────────
-const _cache   = new Map()  // userId → { data, cachedAt }
-const CACHE_TTL = 10 * 60 * 1000  // 10 minutes
+// ─── Cache persistant (JSON sur disque) ──────────────────────────────────────
+// Survit aux redémarrages — contient les membres passés qui ont quitté le serveur
+const DATA_DIR   = join(__dirname, '..', 'data')
+const CACHE_FILE = join(DATA_DIR, 'member-cache.json')
 
-// ─── Fetch d'un membre Discord (avec cache) ───────────────────────────────────
+function loadPersistentCache() {
+  if (!existsSync(CACHE_FILE)) return {}
+  try { return JSON.parse(readFileSync(CACHE_FILE, 'utf8')) } catch { return {} }
+}
+
+function savePersistentCache(cache) {
+  try {
+    if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true })
+    writeFileSync(CACHE_FILE, JSON.stringify(cache, null, 2))
+  } catch {}
+}
+
+// Enregistre / met à jour un membre dans le cache persistant
+function cacheUser(userId, userName, userPoste) {
+  if (!userId || !userName) return
+  const cache = loadPersistentCache()
+  cache[userId] = { userName, userPoste: userPoste || '', updatedAt: new Date().toISOString() }
+  savePersistentCache(cache)
+}
+
+// ─── Cache API en mémoire (TTL 10 min) ────────────────────────────────────────
+const _apiCache = new Map()  // userId → { data, cachedAt }
+const CACHE_TTL = 10 * 60 * 1000
+
+// ─── Fetch individuel d'un membre Discord ─────────────────────────────────────
 async function fetchGuildMember(userId) {
   if (!BOT_TOKEN) return null
 
-  const cached = _cache.get(userId)
+  const cached = _apiCache.get(userId)
   if (cached && Date.now() - cached.cachedAt < CACHE_TTL) return cached.data
 
   try {
@@ -21,11 +48,63 @@ async function fetchGuildMember(userId) {
       { headers: { Authorization: `Bot ${BOT_TOKEN}` } }
     )
     const data = res.ok ? await res.json() : null
-    _cache.set(userId, { data, cachedAt: Date.now() })
+    _apiCache.set(userId, { data, cachedAt: Date.now() })
     return data
   } catch {
     return null
   }
+}
+
+// ─── Fetch bulk : tous les membres du serveur ─────────────────────────────────
+// Nécessite l'intent GUILD_MEMBERS activé dans le portail Discord Developer
+async function fetchAllGuildMembers() {
+  if (!BOT_TOKEN) return []
+  const members = []
+  let after = '0'
+  try {
+    while (true) {
+      const res = await fetch(
+        `https://discord.com/api/v10/guilds/${GUILD_ID}/members?limit=1000&after=${after}`,
+        { headers: { Authorization: `Bot ${BOT_TOKEN}` } }
+      )
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        console.warn('[Discord] Bulk members fetch failed:', res.status, err?.message || '')
+        break
+      }
+      const batch = await res.json()
+      if (!Array.isArray(batch) || batch.length === 0) break
+      members.push(...batch)
+      after = batch[batch.length - 1].user.id
+      if (batch.length < 1000) break
+    }
+  } catch (e) {
+    console.warn('[Discord] Bulk members fetch error:', e.message)
+  }
+  return members
+}
+
+// ─── Warmup au démarrage ──────────────────────────────────────────────────────
+// Charge tous les membres actuels du serveur et met à jour le cache persistant
+async function warmupMemberCache() {
+  if (!BOT_TOKEN) return
+  console.log('[Discord] Warmup cache membres...')
+  const members = await fetchAllGuildMembers()
+  if (!members.length) {
+    console.log('[Discord] Aucun membre récupéré (intent GUILD_MEMBERS désactivé ?)')
+    return
+  }
+  const cache = loadPersistentCache()
+  for (const member of members) {
+    const userId   = member.user?.id
+    const userName = member.nick || member.user?.global_name || member.user?.username
+    const userPoste = getPosteName(member.roles || [])
+    if (userId && userName) {
+      cache[userId] = { userName, userPoste, updatedAt: new Date().toISOString() }
+    }
+  }
+  savePersistentCache(cache)
+  console.log(`[Discord] Cache persistant mis à jour : ${members.length} membres`)
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -39,13 +118,25 @@ function parseNickname(nickname) {
   return { prenom: parts[0] || null, nom: null }
 }
 
-// Résout userId → { userName, userPoste } via l'API Discord
+// Résout userId → { userName, userPoste }
+// Priorité : API Discord (membre actuel) > cache persistant (ancien membre) > null
 async function resolveMember(userId) {
+  // 1. API Discord (membre encore dans le serveur)
   const member = await fetchGuildMember(userId)
-  if (!member) return { userName: null, userPoste: '' }
-  const userName  = member.nick || member.user?.global_name || member.user?.username || null
-  const userPoste = getPosteName(member.roles || [])
-  return { userName, userPoste }
+  if (member) {
+    const userName  = member.nick || member.user?.global_name || member.user?.username || null
+    const userPoste = getPosteName(member.roles || [])
+    if (userName) cacheUser(userId, userName, userPoste)  // met à jour le cache
+    return { userName, userPoste }
+  }
+
+  // 2. Cache persistant (a quitté le serveur mais connu de v2 ou du warmup)
+  const diskCache = loadPersistentCache()
+  const cached    = diskCache[userId]
+  if (cached) return { userName: cached.userName, userPoste: cached.userPoste }
+
+  // 3. Inconnu
+  return { userName: null, userPoste: '' }
 }
 
-module.exports = { fetchGuildMember, parseNickname, resolveMember }
+module.exports = { fetchGuildMember, parseNickname, resolveMember, cacheUser, warmupMemberCache }

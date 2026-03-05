@@ -84,7 +84,11 @@ router.get('/discord/callback',
   passport.authenticate('discord', { failureRedirect: '/login?error=auth' }),
   (req, res) => {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
-    res.redirect(`${frontendUrl}/auth/callback`)
+    // Forcer la sauvegarde de session AVANT le redirect (bug Passport classique)
+    req.session.save((err) => {
+      if (err) console.error('Session save error:', err)
+      res.redirect(`${frontendUrl}/auth/callback`)
+    })
   }
 )
 

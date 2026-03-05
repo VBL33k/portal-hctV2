@@ -135,10 +135,7 @@ export default function Layout({ title, children }) {
           <span className="topbar-left">{title}</span>
 
           <div className="topbar-right">
-            {user?.avatar
-              ? <img src={user.avatar} alt={user.name} className="topbar-avatar" />
-              : <div className="topbar-initials">{initials}</div>
-            }
+            <div className="topbar-initials">{initials}</div>
             <span className="topbar-name">{user?.name || user?.username}</span>
             {user?.poste && <span className="topbar-badge">{user.poste}</span>}
             <div className="topbar-sep" />

@@ -79,6 +79,12 @@ const IconChevron = () => (
   </svg>
 )
 
+const IconSearch = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </svg>
+)
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function ShiftCard({ shift, onDelete }) {
@@ -146,6 +152,7 @@ export default function ServicePage() {
   // View state
   const [tab, setTab] = useState('mine')
   const [selectedMember, setSelectedMember] = useState(null)
+  const [memberSearch, setMemberSearch] = useState('')
 
   // Form state
   const [hospital, setHospital] = useState('TMC')
@@ -474,15 +481,34 @@ export default function ServicePage() {
                     <div className="svc-panel-title">
                       Membres actifs
                       <span className="svc-count-badge">{teamData.members?.length ?? 0}</span>
+                      <div className="member-search-wrap">
+                        <IconSearch />
+                        <input
+                          type="text"
+                          className="member-search-input"
+                          placeholder="Rechercher un membre…"
+                          value={memberSearch}
+                          onChange={e => setMemberSearch(e.target.value)}
+                        />
+                        {memberSearch && (
+                          <button className="member-search-clear" onClick={() => setMemberSearch('')}>×</button>
+                        )}
+                      </div>
                     </div>
 
-                    {!teamData.members?.length ? (
-                      <div className="svc-empty">
-                        <div className="svc-empty-icon">👥</div>
-                        <div className="svc-empty-text">Aucun service enregistré dans l'équipe</div>
-                      </div>
-                    ) : (
-                      teamData.members.map(m => (
+                    {(() => {
+                      const filtered = (teamData.members || []).filter(m =>
+                        !memberSearch || (m.userName || '').toLowerCase().includes(memberSearch.toLowerCase())
+                      )
+                      if (!filtered.length) return (
+                        <div className="svc-empty">
+                          <div className="svc-empty-icon">👥</div>
+                          <div className="svc-empty-text">
+                            {memberSearch ? `Aucun résultat pour "${memberSearch}"` : 'Aucun service enregistré dans l\'équipe'}
+                          </div>
+                        </div>
+                      )
+                      return filtered.map(m => (
                         <div
                           key={m.userId}
                           className="team-member-card"
@@ -502,7 +528,7 @@ export default function ServicePage() {
                           <div className="team-member-arrow"><IconChevron /></div>
                         </div>
                       ))
-                    )}
+                    })()}
                   </div>
                 </>
               ) : (

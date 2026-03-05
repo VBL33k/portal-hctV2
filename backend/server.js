@@ -46,10 +46,11 @@ const isProd = process.env.NODE_ENV === 'production'
 
 app.use(session({
   store: new FileStore({
-    path:    '/var/www/hct/sessions',
-    ttl:     86400,   // 24h en secondes
-    retries: 0,
-    logFn:   () => {},  // silence les logs
+    path:       '/var/www/hct/sessions',
+    ttl:        86400,   // 24h en secondes
+    retries:    3,       // 3 essais si lecture échoue (évite race condition FS)
+    retryDelay: 200,     // 200 ms entre chaque retry
+    logFn:      () => {},  // silence les logs
   }),
   secret: process.env.SESSION_SECRET || 'hct-dev-secret',
   resave: false,

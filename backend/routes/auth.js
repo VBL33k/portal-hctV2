@@ -1,14 +1,11 @@
 const express = require('express')
 const passport = require('passport')
 const DiscordStrategy = require('passport-discord').Strategy
-const fetch = require('node-fetch')
 const { randomUUID } = require('crypto')
 const { getPosteName } = require('../config/roles.js')
+const { fetchGuildMember, parseNickname } = require('../utils/discord.js')
 
 const router = express.Router()
-
-const GUILD_ID = process.env.DISCORD_GUILD_ID || '1435626232749232181'
-const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN
 
 // Tokens éphémères (60s) pour contourner le problème Set-Cookie sur redirects Cloudflare
 const pendingTokens = new Map()
@@ -18,30 +15,6 @@ setInterval(() => {
     if (data.expires < now) pendingTokens.delete(token)
   }
 }, 30_000)
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function parseNickname(nickname) {
-  if (!nickname) return { prenom: null, nom: null }
-  const parts = nickname.trim().split(/\s+/)
-  if (parts.length >= 2) {
-    return { prenom: parts[0], nom: parts.slice(1).join(' ').split('-')[0].trim() }
-  }
-  return { prenom: parts[0] || null, nom: null }
-}
-
-async function fetchGuildMember(userId) {
-  if (!BOT_TOKEN) return null
-  try {
-    const res = await fetch(
-      `https://discord.com/api/v10/guilds/${GUILD_ID}/members/${userId}`,
-      { headers: { Authorization: `Bot ${BOT_TOKEN}` } }
-    )
-    return res.ok ? await res.json() : null
-  } catch {
-    return null
-  }
-}
 
 // ─── Passport ─────────────────────────────────────────────────────────────────
 

@@ -9,6 +9,12 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // À /auth/callback, AuthCallback gère lui-même l'auth via /exchange
+    // → ne pas appeler checkAuth ici pour éviter la race condition
+    if (window.location.pathname.startsWith('/auth/callback')) {
+      setLoading(false)
+      return
+    }
     checkAuth()
   }, [])
 

@@ -4,6 +4,7 @@ const { join }   = require('path')
 const { randomUUID } = require('crypto')
 const { requireAuth } = require('../middleware/auth.js')
 const { isManager }   = require('../config/roles.js')
+const { resolveMember } = require('../utils/discord.js')
 
 const router    = express.Router()
 const DATA_DIR  = join(__dirname, '..', 'data')
@@ -71,23 +72,42 @@ router.get('/mine', requireAuth, (req, res) => {
 })
 
 // GET /api/shifts/overview  (HDP+)
-router.get('/overview', requireAuth, (req, res) => {
+router.get('/overview', requireAuth, async (req, res) => {
   if (!isManager(req.user?.roles || [])) return res.status(403).json({ error: 'Accès refusé' })
   const shifts = loadShifts()
   const { userId } = req.query
+
   if (userId) {
     const us = shifts.filter(s => s.userId === userId)
     return res.json({ userId, stats: computeStats(us), shifts: [...us].sort((a, b) => new Date(b.startAt) - new Date(a.startAt)) })
   }
-  const uids    = [...new Set(shifts.map(s => s.userId))]
-  const members = uids.map(uid => {
+
+  const uids = [...new Set(shifts.map(s => s.userId))]
+
+  // Résolution des noms en parallèle (avec cache interne 10 min)
+  const members = await Promise.all(uids.map(async uid => {
     const us = shifts.filter(s => s.userId === uid)
     const st = computeStats(us)
-    // Include stored user info from most recent shift
+    // Cherche le nom dans le shift le plus récent
     const last = [...us].sort((a, b) => new Date(b.startAt) - new Date(a.startAt))[0]
-    return { userId: uid, userName: last?.userName || uid, userPoste: last?.userPoste || '', stats: st }
-  }).sort((a, b) => b.stats.totalShifts - a.stats.totalShifts)
-  res.json({ globalStats: computeStats(shifts), members })
+
+    let userName  = last?.userName  && last.userName  !== uid ? last.userName  : null
+    let userPoste = last?.userPoste && last.userPoste !== uid ? last.userPoste : null
+
+    // Si pas de nom stocké (vieux records), résolution via API Discord
+    if (!userName) {
+      const resolved = await resolveMember(uid)
+      userName  = resolved.userName  || `[${uid.slice(-4)}]`
+      userPoste = userPoste || resolved.userPoste || ''
+    }
+
+    return { userId: uid, userName, userPoste: userPoste || '', stats: st }
+  }))
+
+  res.json({
+    globalStats: computeStats(shifts),
+    members: members.sort((a, b) => b.stats.totalShifts - a.stats.totalShifts),
+  })
 })
 
 // POST /api/shifts/record

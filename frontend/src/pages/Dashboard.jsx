@@ -167,7 +167,9 @@ export default function Dashboard() {
           <div className="welcome-card">
             <div>
               <div className="welcome-greeting">{greeting}</div>
-              <div className="welcome-name">{user?.prenom || user?.username || 'Personnel'}</div>
+              <div className="welcome-name">
+                {[user?.prenom, user?.nom].filter(Boolean).join(' ') || user?.username || 'Personnel'}
+              </div>
               <div className="welcome-role">
                 {user?.poste || 'Membre du personnel'} · HCT Healthcare
               </div>

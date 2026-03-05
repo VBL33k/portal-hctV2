@@ -121,7 +121,7 @@ body {
 
 .login-logo-wrap {
   position: relative;
-  margin-bottom: 28px;
+  margin-bottom: 10px;
   animation: slideUp 0.5s 0.18s both;
 }
 
@@ -139,8 +139,8 @@ body {
 }
 
 .login-logo-img {
-  width: 86px;
-  height: 86px;
+  width: 110px;
+  height: 110px;
   object-fit: contain;
   position: relative;
   z-index: 1;
@@ -215,7 +215,7 @@ body {
   font-weight: 700;
   letter-spacing: 3px;
   color: #5cb85c;
-  margin-bottom: 32px;
+  margin-bottom: 14px;
   animation: slideUp 0.5s 0.12s both;
 }
 
@@ -281,7 +281,15 @@ body {
 .discord-btn-hct:hover::before  { transform: translateX(0); }
 .discord-btn-hct:hover { box-shadow: 0 8px 32px rgba(226,85,40,0.38); }
 .discord-btn-hct:active { transform: scale(0.975); }
-.discord-btn-hct > * { position: relative; z-index: 1; }
+
+.btn-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  pointer-events: none;
+}
 
 .login-note {
   display: flex;

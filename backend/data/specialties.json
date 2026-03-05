@@ -1,0 +1,66 @@
+{
+  "emt": {
+    "id": "emt",
+    "name": "EMT",
+    "password": null,
+    "description": "Espace EMT",
+    "icon": "🚑",
+    "templates": [],
+    "documents": []
+  },
+  "mers": {
+    "id": "mers",
+    "name": "MERS",
+    "password": null,
+    "description": "Espace MERS - Rapports d'intervention",
+    "icon": "🚁",
+    "templates": [],
+    "documents": []
+  },
+  "medecine-generale": {
+    "id": "medecine-generale",
+    "name": "Médecine Générale",
+    "password": null,
+    "description": "Espace Médecine Générale",
+    "icon": "👨‍⚕️",
+    "templates": [],
+    "documents": []
+  },
+  "psy": {
+    "id": "psy",
+    "name": "Psychiatrie",
+    "password": null,
+    "description": "Espace Psychiatrie",
+    "icon": "🧠",
+    "templates": [],
+    "documents": []
+  },
+  "chirurgie": {
+    "id": "chirurgie",
+    "name": "Chirurgie",
+    "password": null,
+    "description": "Espace Chirurgie",
+    "icon": "⚕️",
+    "templates": [],
+    "documents": []
+  },
+  "medecine-legale": {
+    "id": "medecine-legale",
+    "name": "Médecine Légale",
+    "password": null,
+    "description": "Espace Médecine Légale",
+    "icon": "🔬",
+    "templates": [],
+    "documents": []
+  },
+  "rh": {
+    "id": "rh",
+    "name": "Ressources Humaines",
+    "password": null,
+    "description": "Espace RH - Documents et formulaires",
+    "icon": "👥",
+    "templates": [],
+    "documents": []
+  }
+}
+

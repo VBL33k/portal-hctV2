@@ -1722,7 +1722,7 @@ a.nav-item { text-decoration: none; }
   display: flex;
   flex-direction: column;
   gap: 0;
-  max-width: 780px;
+  width: 100%;
 }
 
 /* ── Header bar ── */
@@ -2204,7 +2204,6 @@ a.nav-item { text-decoration: none; }
 
 /* ── Responsive ── */
 @media (max-width: 600px) {
-  .ann-page { max-width: 100%; }
   .ann-card { padding: 14px 16px 14px 20px; }
   .ann-header { gap: 12px; }
   .ann-countdown { display: none; }

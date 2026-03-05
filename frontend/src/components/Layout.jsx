@@ -101,6 +101,7 @@ const NAV_LINKS = [
   { to: '/',               icon: <IconGrid />,     label: 'Tableau de bord', end: true },
   { to: '/services',       icon: <IconHeart />,    label: 'Prise de service' },
   { to: '/bbcode/fill',    icon: <IconFileCode />, label: 'BBCode' },
+  { to: '/annonces',       icon: <IconBell />,     label: 'Annonces' },
 ]
 
 const NAV_LINKS_SPV = [
@@ -113,7 +114,6 @@ const NAV_LINKS_ADMIN = [
 
 const NAV_DISABLED = [
   { icon: <IconCalendar />, label: 'Planning' },
-  { icon: <IconBell />,     label: 'Annonces' },
   { icon: <IconBook />,     label: 'Formations' },
   { icon: <IconChart />,    label: 'Statistiques' },
   { icon: <IconSettings />, label: 'Paramètres' },

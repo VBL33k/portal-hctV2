@@ -67,11 +67,20 @@ app.use(session({
 app.use(passport.initialize())
 app.use(passport.session())
 
+// ─── Online tracker — met à jour le timestamp pour chaque requête authentifiée ─
+const { touch } = require('./utils/onlineTracker.js')
+app.use((req, res, next) => {
+  if (req.user?.discordId) touch(req.user.discordId)
+  next()
+})
+
 // ─── Routes ───────────────────────────────────────────────────────────────────
-app.use('/api/auth',   require('./routes/auth.js'))
-app.use('/api/users',  require('./routes/users.js'))
-app.use('/api/shifts', require('./routes/shifts.js'))
-app.use('/api/bbcode', require('./routes/bbcode.js'))
+app.use('/api/auth',          require('./routes/auth.js'))
+app.use('/api/users',         require('./routes/users.js'))
+app.use('/api/shifts',        require('./routes/shifts.js'))
+app.use('/api/bbcode',        require('./routes/bbcode.js'))
+app.use('/api/admin',         require('./routes/admin.js'))
+app.use('/api/announcements', require('./routes/announcements.js'))
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ ok: true, env: process.env.NODE_ENV }))

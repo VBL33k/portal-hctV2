@@ -4,6 +4,7 @@ const { join }   = require('path')
 const { randomUUID } = require('crypto')
 const { requireAuth }  = require('../middleware/auth.js')
 const { isManager, isSupervisor } = require('../config/roles.js')
+const { log } = require('../utils/logger.js')
 
 const router   = express.Router()
 const DATA_DIR = join(__dirname, '..', 'data')
@@ -135,6 +136,7 @@ router.post('/templates', requireAuth, (req, res) => {
   const all = loadTemplates()
   all.push(tpl)
   saveTemplates(all)
+  log(req.user.discordId, req.user.name, 'TEMPLATE_CREATED', `« ${tpl.title} » (${categoryId})`)
   res.json({ success: true, template: tpl })
 })
 
@@ -160,6 +162,7 @@ router.put('/templates/:id', requireAuth, (req, res) => {
     updatedAt:   new Date().toISOString(),
   }
   saveTemplates(all)
+  log(req.user.discordId, req.user.name, 'TEMPLATE_UPDATED', `« ${all[idx].title} »`)
   res.json({ success: true, template: all[idx] })
 })
 
@@ -175,6 +178,7 @@ router.delete('/templates/:id', requireAuth, (req, res) => {
     return res.status(403).json({ error: 'Seul le créateur ou un manager peut supprimer' })
   all.splice(idx, 1)
   saveTemplates(all)
+  log(req.user.discordId, req.user.name, 'TEMPLATE_DELETED', `« ${t.title} »`)
   res.json({ success: true })
 })
 

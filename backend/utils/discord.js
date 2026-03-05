@@ -1,7 +1,7 @@
 const fetch      = require('node-fetch')
 const { readFileSync, writeFileSync, existsSync, mkdirSync } = require('fs')
 const { join }   = require('path')
-const { getPosteName } = require('../config/roles.js')
+const { getPosteName, getUserLevel } = require('../config/roles.js')
 
 const GUILD_ID  = process.env.DISCORD_GUILD_ID || '1435626232749232181'
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN
@@ -24,11 +24,22 @@ function savePersistentCache(cache) {
 }
 
 // Enregistre / met à jour un membre dans le cache persistant
-function cacheUser(userId, userName, userPoste) {
+function cacheUser(userId, userName, userPoste, userLevel = -1) {
   if (!userId || !userName) return
   const cache = loadPersistentCache()
-  cache[userId] = { userName, userPoste: userPoste || '', updatedAt: new Date().toISOString() }
+  const existing = cache[userId] || {}
+  cache[userId] = {
+    userName,
+    userPoste:  userPoste  || existing.userPoste  || '',
+    userLevel:  userLevel  >= 0 ? userLevel : (existing.userLevel ?? -1),
+    updatedAt:  new Date().toISOString(),
+  }
   savePersistentCache(cache)
+}
+
+// Retourne le cache persistant complet (pour le module Personnel)
+function getCachedMembers() {
+  return loadPersistentCache()
 }
 
 // ─── Cache API en mémoire (TTL 10 min) ────────────────────────────────────────
@@ -36,11 +47,14 @@ const _apiCache = new Map()  // userId → { data, cachedAt }
 const CACHE_TTL = 10 * 60 * 1000
 
 // ─── Fetch individuel d'un membre Discord ─────────────────────────────────────
-async function fetchGuildMember(userId) {
+// force = true → bypass le cache en mémoire (utilisé à la connexion pour avoir les rôles frais)
+async function fetchGuildMember(userId, force = false) {
   if (!BOT_TOKEN) return null
 
-  const cached = _apiCache.get(userId)
-  if (cached && Date.now() - cached.cachedAt < CACHE_TTL) return cached.data
+  if (!force) {
+    const cached = _apiCache.get(userId)
+    if (cached && Date.now() - cached.cachedAt < CACHE_TTL) return cached.data
+  }
 
   try {
     const res = await fetch(
@@ -48,6 +62,7 @@ async function fetchGuildMember(userId) {
       { headers: { Authorization: `Bot ${BOT_TOKEN}` } }
     )
     const data = res.ok ? await res.json() : null
+    // Mettre à jour le cache même en mode force
     _apiCache.set(userId, { data, cachedAt: Date.now() })
     return data
   } catch {
@@ -96,11 +111,12 @@ async function warmupMemberCache() {
   }
   const cache = loadPersistentCache()
   for (const member of members) {
-    const userId   = member.user?.id
-    const userName = member.nick || member.user?.global_name || member.user?.username
+    const userId    = member.user?.id
+    const userName  = member.nick || member.user?.global_name || member.user?.username
     const userPoste = getPosteName(member.roles || [])
+    const userLevel = getUserLevel(member.roles || [])
     if (userId && userName) {
-      cache[userId] = { userName, userPoste, updatedAt: new Date().toISOString() }
+      cache[userId] = { userName, userPoste, userLevel, updatedAt: new Date().toISOString() }
     }
   }
   savePersistentCache(cache)
@@ -126,8 +142,9 @@ async function resolveMember(userId) {
   if (member) {
     const userName  = member.nick || member.user?.global_name || member.user?.username || null
     const userPoste = getPosteName(member.roles || [])
-    if (userName) cacheUser(userId, userName, userPoste)  // met à jour le cache
-    return { userName, userPoste }
+    const userLevel = getUserLevel(member.roles || [])
+    if (userName) cacheUser(userId, userName, userPoste, userLevel)  // met à jour le cache
+    return { userName, userPoste, userLevel }
   }
 
   // 2. Cache persistant (a quitté le serveur mais connu de v2 ou du warmup)
@@ -139,4 +156,4 @@ async function resolveMember(userId) {
   return { userName: null, userPoste: '' }
 }
 
-module.exports = { fetchGuildMember, parseNickname, resolveMember, cacheUser, warmupMemberCache }
+module.exports = { fetchGuildMember, parseNickname, resolveMember, cacheUser, getCachedMembers, warmupMemberCache }

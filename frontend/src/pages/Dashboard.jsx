@@ -102,7 +102,7 @@ const MODULES_BASE = [
   { icon: <IconHeart />,    title: 'Prise de service',     desc: 'Déclarez vos prises et fins de service au sein du centre médical.', soon: false, to: '/services' },
   { icon: <IconFileCode />, title: 'BBCode / Rapports',    desc: 'Remplissez vos rapports depuis les templates BBCode disponibles.',  soon: false, to: '/bbcode/fill' },
   { icon: <IconCalendar />, title: 'Planning',             desc: 'Consultez et gérez les plannings de permanence du personnel.',       soon: true,  to: null },
-  { icon: <IconBell />,     title: 'Annonces',             desc: "Retrouvez toutes les communications officielles de la direction.",   soon: true,  to: null },
+  { icon: <IconBell />,     title: 'Annonces',             desc: "Retrouvez toutes les communications officielles de la direction.",   soon: false, to: '/annonces' },
   { icon: <IconUsers />,    title: 'Personnel',            desc: 'Annuaire complet des membres, logs d\'activité et gestion RH.',      soon: true,  to: null },
   { icon: <IconBook />,     title: 'Formations',           desc: 'Accédez aux modules de formation continue du centre médical.',       soon: true,  to: null },
   { icon: <IconChart />,    title: 'Statistiques',         desc: "Tableaux de bord et métriques d'activité du centre.",                soon: true,  to: null },

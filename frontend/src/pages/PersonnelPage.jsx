@@ -215,12 +215,14 @@ function MemberModal({ userId, onClose }) {
 
         {/* ── Header ── */}
         <div className="personnel-modal-header">
-          <div className="personnel-modal-avatar" style={{ borderColor: levelColor }}>
-            {detail?.avatarUrl
-              ? <img src={detail.avatarUrl} alt={detail.userName} onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex' }} />
-              : null
-            }
-            <span style={detail?.avatarUrl ? { display: 'none' } : {}}>{initials}</span>
+          <div className="personnel-modal-avatar-wrap">
+            <div className="personnel-modal-avatar" style={{ borderColor: levelColor }}>
+              {detail?.avatarUrl
+                ? <img src={detail.avatarUrl} alt={detail.userName} onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex' }} />
+                : null
+              }
+              <span style={detail?.avatarUrl ? { display: 'none' } : {}}>{initials}</span>
+            </div>
             {detail?.online && <span className="personnel-online-dot personnel-online-dot--lg" />}
           </div>
 

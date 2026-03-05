@@ -2,8 +2,9 @@ const express = require('express')
 const passport = require('passport')
 const DiscordStrategy = require('passport-discord').Strategy
 const { randomUUID } = require('crypto')
-const { getPosteName } = require('../config/roles.js')
+const { getPosteName, getUserLevel } = require('../config/roles.js')
 const { fetchGuildMember, parseNickname, cacheUser } = require('../utils/discord.js')
+const { log } = require('../utils/logger.js')
 
 const router = express.Router()
 
@@ -27,12 +28,19 @@ passport.use(new DiscordStrategy(
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
-      const member = await fetchGuildMember(profile.id)
+      // force=true → toujours appel API frais à la connexion, jamais de cache rôles périmé
+      const member = await fetchGuildMember(profile.id, true)
 
       const nickname = member?.nick || profile.global_name || profile.username
       const { prenom, nom } = parseNickname(nickname)
       const roles = member?.roles || []
       const poste = getPosteName(roles)
+
+      // Bloquer les utilisateurs sans rôle reconnu (pas sur le serveur ou simple citoyen)
+      if (getUserLevel(roles) < 0) {
+        console.warn(`[AUTH] Accès refusé pour ${profile.username} — aucun rôle HCT reconnu`)
+        return done(null, false, { message: 'access' })
+      }
 
       const user = {
         discordId:  profile.id,
@@ -66,10 +74,12 @@ router.get('/discord', passport.authenticate('discord'))
 router.get('/discord/callback', (req, res, next) => {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
 
-  passport.authenticate('discord', (err, user) => {
+  passport.authenticate('discord', (err, user, info) => {
     if (err || !user) {
-      console.error('[AUTH CALLBACK] Erreur:', err?.message || 'no user')
-      return res.redirect(`${frontendUrl}/login?error=auth`)
+      // info.message === 'access' → l'utilisateur est authentifié mais sans rôle HCT
+      const errorCode = (!user && info?.message === 'access') ? 'access' : 'auth'
+      console.error('[AUTH CALLBACK] Erreur:', err?.message || `no user (${errorCode})`)
+      return res.redirect(`${frontendUrl}/login?error=${errorCode}`)
     }
 
     const token = randomUUID()
@@ -94,8 +104,10 @@ router.get('/exchange', async (req, res) => {
     if (err) return res.status(500).json({ error: 'Erreur login' })
     req.session.save((err2) => {
       if (err2) return res.status(500).json({ error: 'Erreur session' })
-      // Persist user name so it's available even s'il quitte le serveur plus tard
-      cacheUser(entry.user.discordId, entry.user.name, entry.user.poste)
+      // Persist user name + level so it's available even s'il quitte le serveur plus tard
+      const lvl = getUserLevel(entry.user.roles || [])
+      cacheUser(entry.user.discordId, entry.user.name, entry.user.poste, lvl)
+      log(entry.user.discordId, entry.user.name, 'LOGIN', `Connexion via Discord OAuth`)
       res.json({ user: entry.user })
     })
   })

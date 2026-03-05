@@ -5,6 +5,7 @@ const { randomUUID } = require('crypto')
 const { requireAuth } = require('../middleware/auth.js')
 const { isManager }   = require('../config/roles.js')
 const { resolveMember } = require('../utils/discord.js')
+const { log } = require('../utils/logger.js')
 
 const router    = express.Router()
 const DATA_DIR  = join(__dirname, '..', 'data')
@@ -153,6 +154,8 @@ router.post('/record', requireAuth, (req, res) => {
   const shifts = loadShifts()
   shifts.push(shift)
   saveShifts(shifts)
+  log(req.user.discordId, req.user.name, 'SERVICE_CREATED',
+    `${hospital} — ${body.startLocal || body.startAt} → ${body.endLocal || body.endAt}`)
   res.json({ success: true, shift })
 })
 
@@ -163,8 +166,11 @@ router.delete('/:id', requireAuth, (req, res) => {
   const shifts       = loadShifts()
   const idx          = shifts.findIndex(s => s.id === req.params.id && s.userId === targetUserId)
   if (idx === -1) return res.status(404).json({ error: 'Service non trouvé' })
+  const deleted = shifts[idx]
   shifts.splice(idx, 1)
   saveShifts(shifts)
+  log(req.user.discordId, req.user.name, 'SERVICE_DELETED',
+    `${deleted.hospital} — ${deleted.startLocal || deleted.startAt}`)
   res.json({ success: true })
 })
 

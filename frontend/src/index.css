@@ -291,6 +291,14 @@ body {
   pointer-events: none;
 }
 
+/* Conteneur toujours présent — maintient le layout identique avec ou sans erreur */
+.login-error-area {
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 .login-error-banner {
   display: flex;
   align-items: flex-start;

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import Layout from '../components/Layout.jsx'
 
+const API = import.meta.env.VITE_API_URL || ''
+
 // SPV+ role IDs — pour afficher le module Créateur de templates
 const SPV_ROLE_IDS = new Set([
   '1140657047126425660', // SHIFT_SPV
@@ -99,6 +101,26 @@ const IconShield = () => (
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
   </svg>
 )
+const IconReceipt = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/>
+    <line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/>
+  </svg>
+)
+
+// Icône superviseur : badge étoile doré
+const IconSpvBadge = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="none">
+    <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" fill="#f59e0b"/>
+    <path d="M10.5 13l-1.5-1.5 1-1 .5.5 2-2 1 1z" fill="white"/>
+  </svg>
+)
+// Icône non-superviseur : croix rouge
+const IconNoSpv = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round">
+    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+)
 const IconArrow = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
@@ -115,13 +137,12 @@ const IconFileCode = () => (
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const MODULES_BASE = [
-  { icon: <IconHeart />,    title: 'Prise de service',     desc: 'Déclarez vos prises et fins de service au sein du centre médical.', soon: false, to: '/services' },
-  { icon: <IconFileCode />, title: 'BBCode / Rapports',    desc: 'Remplissez vos rapports depuis les templates BBCode disponibles.',  soon: false, to: '/bbcode/fill' },
-  { icon: <IconCalendar />, title: 'Planning',             desc: 'Consultez et gérez les plannings de permanence du personnel.',       soon: true,  to: null },
-  { icon: <IconBell />,     title: 'Annonces',             desc: "Retrouvez toutes les communications officielles de la direction.",   soon: false, to: '/annonces' },
-  { icon: <IconUsers />,    title: 'Personnel',            desc: 'Annuaire complet des membres, logs d\'activité et gestion RH.',      soon: true,  to: null },
-  { icon: <IconBook />,     title: 'Formations',           desc: 'Accédez aux modules de formation continue du centre médical.',       soon: true,  to: null },
-  { icon: <IconChart />,    title: 'Statistiques',         desc: "Tableaux de bord et métriques d'activité du centre.",                soon: true,  to: null },
+  { icon: <IconHeart />,    title: 'Prise de service',  desc: 'Déclarez vos prises et fins de service au sein du centre médical.', soon: false, to: '/services' },
+  { icon: <IconFileCode />, title: 'BBCode / Rapports', desc: 'Remplissez vos rapports depuis les templates BBCode disponibles.',  soon: false, to: '/bbcode/fill' },
+  { icon: <IconBell />,     title: 'Annonces',          desc: "Retrouvez toutes les communications officielles de la direction.",   soon: false, to: '/annonces' },
+  { icon: <IconUsers />,    title: 'Personnel',         desc: "Annuaire complet des membres, logs d'activité et gestion RH.",      soon: true,  to: null },
+  { icon: <IconChart />,    title: 'Statistiques',      desc: "Tableaux de bord et métriques d'activité du centre.",               soon: true,  to: null },
+  { icon: <IconReceipt />,  title: 'Facturation',       desc: 'Gérez les factures et les paiements liés aux services médicaux.',   soon: true,  to: null },
 ]
 
 const MODULES_SPV = [
@@ -137,7 +158,7 @@ export default function Dashboard() {
 
   const [lastShift, setLastShift] = useState(null)
   useEffect(() => {
-    fetch('/api/shifts/mine', { credentials: 'include' })
+    fetch(`${API}/api/shifts/mine`, { credentials: 'include' })
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data?.stats?.lastShift) setLastShift(data.stats.lastShift) })
       .catch(() => {})
@@ -148,9 +169,8 @@ export default function Dashboard() {
     ? MODULES_BASE.map(m => m.title === 'Personnel' ? { ...m, soon: false, to: '/personnel' } : m)
     : MODULES_BASE
 
-  const allModules = isSupervisor(user)
-    ? [...MODULES, ...MODULES_SPV]
-    : MODULES
+  const allModules = (isSupervisor(user) ? [...MODULES, ...MODULES_SPV] : MODULES)
+    .sort((a, b) => (a.soon ? 1 : 0) - (b.soon ? 1 : 0))
 
   return (
     <Layout title="Tableau de bord">
@@ -188,7 +208,9 @@ export default function Dashboard() {
         <div className="stat-card">
           <div className="stat-icon"><IconShield /></div>
           <div>
-            <div className="stat-val">{isSupervisor(user) ? '✓' : '—'}</div>
+            <div className="stat-val stat-val--icon">
+              {isSupervisor(user) ? <IconSpvBadge /> : <IconNoSpv />}
+            </div>
             <div className="stat-label">Vue superviseur</div>
           </div>
         </div>

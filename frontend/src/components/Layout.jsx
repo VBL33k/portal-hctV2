@@ -82,6 +82,12 @@ const IconChart = () => (
     <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
   </svg>
 )
+const IconReceipt = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/>
+    <line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/>
+  </svg>
+)
 const IconSettings = () => (
   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="3"/>
@@ -113,9 +119,8 @@ const NAV_LINKS_ADMIN = [
 ]
 
 const NAV_DISABLED = [
-  { icon: <IconCalendar />, label: 'Planning' },
-  { icon: <IconBook />,     label: 'Formations' },
   { icon: <IconChart />,    label: 'Statistiques' },
+  { icon: <IconReceipt />,  label: 'Facturation' },
 ]
 
 const NAV_LINKS_ALL = [

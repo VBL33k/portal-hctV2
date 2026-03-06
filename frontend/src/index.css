@@ -594,6 +594,7 @@ body {
 }
 
 .stat-val   { font-size: 1.55rem; font-weight: 900; color: var(--white); line-height: 1; }
+.stat-val--icon { display: flex; align-items: center; line-height: 1; }
 .stat-label { font-size: 0.72rem; color: var(--muted); margin-top: 3px; }
 
 /* Modules */
@@ -1723,7 +1724,6 @@ a.nav-item { text-decoration: none; }
   flex-direction: column;
   gap: 0;
   width: 100%;
-  max-width: 960px;
 }
 
 /* ── Header bar ── */

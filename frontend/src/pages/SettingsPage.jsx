@@ -343,14 +343,14 @@ export default function SettingsPage() {
                 <div className="sett-contract-desc">
                   Téléchargez votre contrat pré-rempli au format PDF.
                   {!hasAddress && (
-                    <span className="sett-contract-warn">
-                      {' '}<IconAlertTriangle /> Renseignez votre adresse pour débloquer.
-                    </span>
+                    <><br /><span className="sett-contract-warn">
+                      <IconAlertTriangle /> Renseignez votre adresse pour débloquer.
+                    </span></>
                   )}
                   {hasAddress && !hasIdentity && (
-                    <span className="sett-contract-warn">
-                      {' '}<IconAlertTriangle /> Renseignez votre nom et prénom pour débloquer.
-                    </span>
+                    <><br /><span className="sett-contract-warn">
+                      <IconAlertTriangle /> Renseignez votre nom et prénom pour débloquer.
+                    </span></>
                   )}
                 </div>
               </div>

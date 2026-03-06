@@ -108,11 +108,12 @@ const IconReceipt = () => (
   </svg>
 )
 
-// Icône superviseur : badge étoile doré
+// Icône superviseur : coche dans un cercle vert
 const IconSpvBadge = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="none">
-    <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" fill="#f59e0b"/>
-    <path d="M10.5 13l-1.5-1.5 1-1 .5.5 2-2 1 1z" fill="white"/>
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="11" fill="#22c55e" opacity="0.15"/>
+    <circle cx="12" cy="12" r="11" stroke="#22c55e" strokeWidth="1.5"/>
+    <polyline points="7 12.5 10.5 16 17 9" stroke="#22c55e" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 )
 // Icône non-superviseur : croix rouge

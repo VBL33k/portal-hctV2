@@ -452,10 +452,11 @@ body {
 /* Main */
 .main-content {
   margin-left: 252px;
-  flex: 1;
+  width: calc(100vw - 252px);
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* Topbar */

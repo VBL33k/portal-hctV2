@@ -175,6 +175,13 @@ const IconRadio = () => (
     <line x1="8" y1="23" x2="16" y2="23"/>
   </svg>
 )
+const IconTemplate = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2"/>
+    <line x1="3" y1="9" x2="21" y2="9"/>
+    <line x1="9" y1="9" x2="9" y2="21"/>
+  </svg>
+)
 
 // ─── ServiceNote component ────────────────────────────────────────────────────
 
@@ -363,13 +370,14 @@ function ServiceNote({ canEdit }) {
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const MODULES_BASE = [
-  { icon: <IconHeart />,    title: 'Prise de service',  desc: 'Déclarez vos prises et fins de service au sein du centre médical.', soon: false, to: '/services' },
-  { icon: <IconFileCode />, title: 'BBCode / Rapports', desc: 'Remplissez vos rapports depuis les templates BBCode disponibles.',  soon: false, to: '/bbcode/fill' },
-  { icon: <IconBell />,     title: 'Annonces',          desc: "Retrouvez toutes les communications officielles de la direction.",   soon: false, to: '/annonces' },
-  { icon: <IconRadio />,    title: 'Bipper',            desc: 'Envoyez des demandes de renfort aux unités via le canal radio Discord.', soon: false, to: '/bipper' },
-  { icon: <IconUsers />,    title: 'Personnel',         desc: "Annuaire complet des membres, logs d'activité et gestion RH.",      soon: true,  to: null },
-  { icon: <IconChart />,    title: 'Statistiques',      desc: "Tableaux de bord et métriques d'activité du centre.",               soon: true,  to: null },
-  { icon: <IconReceipt />,  title: 'Facturation',       desc: 'Gérez les factures et les paiements liés aux services médicaux.',   soon: true,  to: null },
+  { icon: <IconHeart />,    title: 'Prise de service',      desc: 'Déclarez vos prises et fins de service au sein du centre médical.', soon: false, to: '/services' },
+  { icon: <IconFileCode />, title: 'BBCode / Rapports',     desc: 'Remplissez vos rapports depuis les templates BBCode disponibles.',  soon: false, to: '/bbcode/fill' },
+  { icon: <IconBell />,     title: 'Annonces',              desc: "Retrouvez toutes les communications officielles de la direction.",   soon: false, to: '/annonces' },
+  { icon: <IconRadio />,    title: 'Bipper',                desc: 'Envoyez des demandes de renfort aux unités via le canal radio Discord.', soon: false, to: '/bipper' },
+  { icon: <IconTemplate />, title: 'Créateur de templates', desc: 'Créez et gérez les templates BBCode pour les rapports du personnel.', soon: false, to: '/bbcode/builder', spvOnly: true },
+  { icon: <IconUsers />,    title: 'Personnel',             desc: "Annuaire complet des membres, logs d'activité et gestion RH.",      soon: true,  to: null },
+  { icon: <IconChart />,    title: 'Statistiques',          desc: "Tableaux de bord et métriques d'activité du centre.",               soon: true,  to: null },
+  { icon: <IconReceipt />,  title: 'Facturation',           desc: 'Gérez les factures et les paiements liés aux services médicaux.',   soon: true,  to: null },
 ]
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -388,9 +396,11 @@ export default function Dashboard() {
   }, [])
 
   // Personnel visible + actif uniquement pour les Deputy Chief et supérieurs
-  const MODULES = isFullAdmin(user)
-    ? MODULES_BASE.map(m => m.title === 'Personnel' ? { ...m, soon: false, to: '/personnel' } : m)
-    : MODULES_BASE.filter(m => m.title !== 'Personnel')
+  // Créateur de templates visible uniquement pour les superviseurs (HDP inclus)
+  const MODULES = MODULES_BASE
+    .filter(m => !m.spvOnly || isSupervisor(user))
+    .map(m => isFullAdmin(user) && m.title === 'Personnel' ? { ...m, soon: false, to: '/personnel' } : m)
+    .filter(m => isFullAdmin(user) || m.title !== 'Personnel')
 
   const allModules = MODULES
     .sort((a, b) => (a.soon ? 1 : 0) - (b.soon ? 1 : 0))

@@ -11,11 +11,10 @@ async function apiFetch(url, options, onUnauth) {
 
 const API = import.meta.env.VITE_API_URL || ''
 
-// Role IDs with level >= 12 (HDP and above) — mirrors backend config/roles.js
+// Role IDs with level >= 11 (HDP and above) — mirrors backend config/roles.js
 const MANAGER_ROLE_IDS = new Set([
-  '809086773326118952', // HDP (12)
+  '809086773326118952', // HDP (11)
   '805518674806046733', // DEPUTY_CHIEF (13)
-  '1407313203326877696',// RH_SIMPLE (13)
   '805481782119104522', // CHIEF (14)
   '805551419905015818', // DEO (15)
   '805508029151313921', // CEO (16)
@@ -167,6 +166,7 @@ export default function ServicePage() {
   // Data
   const [myData, setMyData] = useState({ stats: null, shifts: [] })
   const [teamData, setTeamData] = useState(null)
+  const [teamLoadError, setTeamLoadError] = useState(false)
   const [loading, setLoading] = useState(true)
 
   // Live duration preview
@@ -201,10 +201,12 @@ export default function ServicePage() {
   }
 
   async function fetchTeam() {
+    setTeamLoadError(false)
     try {
       const res = await apiFetch(`${API}/api/shifts/overview`, {}, onUnauth)
       if (res?.ok) setTeamData(await res.json())
-    } catch {}
+      else setTeamLoadError(true)
+    } catch { setTeamLoadError(true) }
   }
 
   async function handleSubmit(e) {
@@ -555,6 +557,12 @@ export default function ServicePage() {
                     })()}
                   </div>
                 </>
+              ) : teamLoadError ? (
+                <div className="svc-empty">
+                  <div className="svc-empty-icon">🔒</div>
+                  <div className="svc-empty-text">Accès refusé</div>
+                  <div className="svc-empty-sub">Vous n'avez pas les permissions nécessaires pour accéder à cette section.</div>
+                </div>
               ) : (
                 <div className="svc-empty">
                   <div className="svc-empty-text">Chargement de l'équipe…</div>

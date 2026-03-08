@@ -123,6 +123,33 @@ const IconArrow = () => (
     <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
   </svg>
 )
+const IconMegaphone = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 11l19-9-9 19-2-8-8-2z"/>
+  </svg>
+)
+const IconPencil = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  </svg>
+)
+const IconTrash2 = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+    <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+  </svg>
+)
+const IconCheck = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+)
+const IconX = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+)
 const IconFileCode = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -130,6 +157,126 @@ const IconFileCode = () => (
     <polyline points="10 13 8 15 10 17"/><polyline points="14 13 16 15 14 17"/>
   </svg>
 )
+
+// ─── ServiceNote component ────────────────────────────────────────────────────
+
+function timeAgo(iso) {
+  if (!iso) return ''
+  const diff = Date.now() - new Date(iso).getTime()
+  const m = Math.floor(diff / 60000)
+  const h = Math.floor(m / 60)
+  const d = Math.floor(h / 24)
+  if (m < 1)  return "à l'instant"
+  if (m < 60) return `il y a ${m} min`
+  if (h < 24) return `il y a ${h}h`
+  return `il y a ${d}j`
+}
+
+function ServiceNote({ canEdit }) {
+  const [note, setNote]         = useState(null)
+  const [editing, setEditing]   = useState(false)
+  const [draft, setDraft]       = useState('')
+  const [saving, setSaving]     = useState(false)
+  const [confirmDel, setConfirmDel] = useState(false)
+
+  useEffect(() => {
+    fetch(`${API}/api/note`, { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.note) setNote(data.note) })
+      .catch(() => {})
+  }, [])
+
+  async function handleSave() {
+    if (!draft.trim()) return
+    setSaving(true)
+    try {
+      const r = await fetch(`${API}/api/note`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ content: draft }),
+      })
+      if (r.ok) {
+        const data = await r.json()
+        setNote(data.note)
+        setEditing(false)
+      }
+    } finally { setSaving(false) }
+  }
+
+  async function handleDelete() {
+    await fetch(`${API}/api/note`, { method: 'DELETE', credentials: 'include' })
+    setNote(null)
+    setConfirmDel(false)
+    setEditing(false)
+  }
+
+  function openEdit() {
+    setDraft(note?.content || '')
+    setEditing(true)
+    setConfirmDel(false)
+  }
+
+  // Rien à afficher + pas le droit d'écrire
+  if (!note && !canEdit) return null
+
+  return (
+    <div className={`svc-note-card${editing ? ' svc-note-card--editing' : ''}`}>
+      <div className="svc-note-header">
+        <span className="svc-note-badge"><IconMegaphone /> NOTE DE SERVICE</span>
+        {canEdit && !editing && (
+          <div className="svc-note-actions">
+            <button className="svc-note-btn" onClick={openEdit} title="Modifier">
+              <IconPencil /> {note ? 'Modifier' : 'Rédiger une note'}
+            </button>
+            {note && !confirmDel && (
+              <button className="svc-note-btn svc-note-btn--danger" onClick={() => setConfirmDel(true)} title="Supprimer">
+                <IconTrash2 />
+              </button>
+            )}
+            {confirmDel && (
+              <span className="svc-note-confirm">
+                Supprimer ?
+                <button className="svc-note-btn svc-note-btn--danger" onClick={handleDelete}><IconCheck /> Oui</button>
+                <button className="svc-note-btn" onClick={() => setConfirmDel(false)}><IconX /> Non</button>
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {editing ? (
+        <div className="svc-note-edit">
+          <textarea
+            className="svc-note-textarea"
+            value={draft}
+            onChange={e => setDraft(e.target.value.slice(0, 500))}
+            placeholder="Rédigez votre note de service…"
+            autoFocus
+          />
+          <div className="svc-note-edit-footer">
+            <span className="svc-note-chars">{draft.length}/500</span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="svc-note-btn" onClick={() => setEditing(false)}><IconX /> Annuler</button>
+              <button className="svc-note-btn svc-note-btn--save" onClick={handleSave} disabled={saving || !draft.trim()}>
+                <IconCheck /> {saving ? 'Enregistrement…' : 'Publier'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : note ? (
+        <div className="svc-note-content">
+          <p className="svc-note-text">"{note.content}"</p>
+          <div className="svc-note-meta">
+            {note.author} · {timeAgo(note.updatedAt)}
+          </div>
+        </div>
+      ) : (
+        <p className="svc-note-empty">Aucune note publiée. Cliquez sur « Rédiger une note » pour en créer une.</p>
+      )}
+    </div>
+  )
+}
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -208,6 +355,9 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Note de service */}
+      <ServiceNote canEdit={isSupervisor(user)} />
 
       {/* Modules */}
       <div className="section-label">MODULES</div>

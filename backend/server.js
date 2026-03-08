@@ -81,6 +81,11 @@ app.use('/api/shifts',        require('./routes/shifts.js'))
 app.use('/api/bbcode',        require('./routes/bbcode.js'))
 app.use('/api/admin',         require('./routes/admin.js'))
 app.use('/api/announcements', require('./routes/announcements.js'))
+app.use('/api/settings',      require('./routes/settings.js'))
+app.use('/api/note',          require('./routes/note.js'))
+
+// Serve uploaded avatars
+app.use('/api/uploads', require('express').static(require('path').join(__dirname, 'uploads')))
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ ok: true, env: process.env.NODE_ENV }))

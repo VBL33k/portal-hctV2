@@ -51,16 +51,19 @@ function buildBipperEmbed(req) {
   const color   = URGENCY_COLORS[req.urgency] || 0x5865F2
   const emoji   = URGENCY_EMOJI[req.urgency]  || '⚠️'
   const statusMap = {
-    pending:     '⏳ En attente',
-    accepted:    '✅ Acceptée',
-    in_progress: '🔄 En cours',
-    completed:   '✔️ Terminée',
+    pending:   '⏳ En attente',
+    accepted:  '✅ Acceptée',
+    completed: '✔️ Terminée',
   }
 
   const embed = new EmbedBuilder()
     .setTitle(`🚨 DEMANDE DE RENFORT — ${req.unitLabel}`)
-    .setColor(color)
-    .setDescription('Une demande de renfort a été émise depuis le portail HCT.')
+    .setColor(req.status === 'completed' ? 0x22c55e : color)
+    .setDescription(
+      req.status === 'completed'
+        ? '✔️ Cette demande de renfort a été marquée comme **terminée**.'
+        : 'Une demande de renfort a été émise depuis le portail HCT.'
+    )
     .addFields(
       { name: '🏥 Hôpital',              value: req.hospitalLabel,    inline: true  },
       { name: '📍 Localisation',         value: req.location,         inline: true  },
@@ -69,7 +72,7 @@ function buildBipperEmbed(req) {
       { name: '📊 Statut',               value: statusMap[req.status] || req.status, inline: true },
       { name: '👤 Demandé par',          value: req.requestedByName,  inline: true  },
     )
-    .setFooter({ text: 'HCT Healthcare Portal · Réagissez ✅ pour accepter' })
+    .setFooter({ text: req.status === 'completed' ? 'HCT Healthcare Portal' : 'HCT Healthcare Portal · Réagissez ✅ pour accepter' })
     .setTimestamp(new Date(req.createdAt))
 
   if (req.info) {
@@ -77,6 +80,9 @@ function buildBipperEmbed(req) {
   }
   if (req.acceptedByName) {
     embed.addFields({ name: '✅ Accepté par', value: req.acceptedByName, inline: true })
+  }
+  if (req.completedByName) {
+    embed.addFields({ name: '✔️ Terminé par', value: req.completedByName, inline: true })
   }
 
   return embed
@@ -152,27 +158,45 @@ function startBipperPolling() {
       let changed = false
 
       for (const req of requests) {
-        if (req.discordSent || req.status === 'completed') continue
+        // 1. Envoyer les nouveaux embeds
+        if (!req.discordSent) {
+          try {
+            const channel = await client.channels.fetch(req.channelId)
+            if (!channel) continue
 
-        try {
-          const channel = await client.channels.fetch(req.channelId)
-          if (!channel) continue
+            const msg = await channel.send({
+              content: `<@&${req.unitRoleId}> — Demande de renfort`,
+              embeds:  [buildBipperEmbed(req)],
+            })
 
-          const msg = await channel.send({
-            content: `<@&${req.unitRoleId}> — Demande de renfort`,
-            embeds:  [buildBipperEmbed(req)],
-          })
+            await msg.react('✅')
 
-          await msg.react('✅')
+            req.discordSent      = true
+            req.discordMessageId = msg.id
+            req.updatedAt        = new Date().toISOString()
+            changed = true
 
-          req.discordSent      = true
-          req.discordMessageId = msg.id
-          req.updatedAt        = new Date().toISOString()
-          changed = true
+            console.log(`📨 Bipper envoyé [${req.id}] — ${req.unitLabel} @ ${req.hospitalLabel}`)
+          } catch (err) {
+            console.error(`❌ Bipper send error [${req.id}]:`, err.message)
+          }
+          continue
+        }
 
-          console.log(`📨 Bipper envoyé [${req.id}] — ${req.unitLabel} @ ${req.hospitalLabel}`)
-        } catch (err) {
-          console.error(`❌ Bipper send error [${req.id}]:`, err.message)
+        // 2. Mettre à jour l'embed quand la demande est terminée
+        if (req.status === 'completed' && !req.discordCompletionSent && req.discordMessageId) {
+          try {
+            const channel = await client.channels.fetch(req.channelId)
+            if (!channel) continue
+            const msg = await channel.messages.fetch(req.discordMessageId)
+            await msg.edit({ embeds: [buildBipperEmbed(req)] })
+            req.discordCompletionSent = true
+            req.updatedAt = new Date().toISOString()
+            changed = true
+            console.log(`✔️ Bipper terminé [${req.id}] — embed mis à jour`)
+          } catch (err) {
+            console.error(`❌ Bipper completion update error [${req.id}]:`, err.message)
+          }
         }
       }
 

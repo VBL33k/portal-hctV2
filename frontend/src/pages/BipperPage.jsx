@@ -6,16 +6,14 @@ const API = import.meta.env.VITE_API_URL || ''
 
 // ─── Status helpers ────────────────────────────────────────────────────────────
 const STATUS_LABEL = {
-  pending:     'En attente',
-  accepted:    'Acceptée',
-  in_progress: 'En cours',
-  completed:   'Terminée',
+  pending:   'En attente',
+  accepted:  'Acceptée',
+  completed: 'Terminée',
 }
 const STATUS_CLASS = {
-  pending:     'bip-status--pending',
-  accepted:    'bip-status--accepted',
-  in_progress: 'bip-status--inprogress',
-  completed:   'bip-status--completed',
+  pending:   'bip-status--pending',
+  accepted:  'bip-status--accepted',
+  completed: 'bip-status--completed',
 }
 const URGENCY_CLASS = {
   'Faible':   'bip-urg--low',
@@ -48,11 +46,6 @@ const IconSend = () => (
     <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
   </svg>
 )
-const IconClock = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-  </svg>
-)
 const IconRefresh = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="23 4 23 10 17 10"/>
@@ -70,7 +63,7 @@ export default function BipperPage() {
   const { user } = useAuth()
 
   // Form state
-  const [units,    setUnits]    = useState([])
+  const [units,     setUnits]     = useState([])
   const [hospitals, setHospitals] = useState([])
   const [form, setForm] = useState({
     unitId:           '',
@@ -80,18 +73,15 @@ export default function BipperPage() {
     urgency:          '',
     info:             '',
   })
-  const [submitting, setSubmitting] = useState(false)
-  const [submitError, setSubmitError] = useState('')
-  const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [submitting,     setSubmitting]     = useState(false)
+  const [submitError,    setSubmitError]    = useState('')
+  const [submitSuccess,  setSubmitSuccess]  = useState(false)
 
   // Requests panel
-  const [requests, setRequests] = useState([])
+  const [requests,    setRequests]    = useState([])
   const [loadingReqs, setLoadingReqs] = useState(true)
 
-  // Cooldown timer
-  const [now, setNow] = useState(Date.now())
-
-  // ─── Fetch units + hospitals ────────────────────────────────────────────────
+  // ─── Fetch units ────────────────────────────────────────────────────────────
   const fetchUnits = useCallback(async () => {
     try {
       const r = await fetch(`${API}/api/bipper/units`, { credentials: 'include' })
@@ -118,20 +108,11 @@ export default function BipperPage() {
   useEffect(() => {
     fetchUnits()
     fetchRequests()
-    // Polling toutes les 5s
     const interval = setInterval(() => {
       fetchRequests()
-      fetchUnits()
-      setNow(Date.now())
     }, 5000)
     return () => clearInterval(interval)
   }, [fetchUnits, fetchRequests])
-
-  // Update "now" every second for cooldown display
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000)
-    return () => clearInterval(t)
-  }, [])
 
   // ─── Submit ─────────────────────────────────────────────────────────────────
   async function handleSubmit(e) {
@@ -154,10 +135,9 @@ export default function BipperPage() {
         setSubmitSuccess(true)
         setForm({ unitId: '', hospital: '', location: '', interventionType: '', urgency: '', info: '' })
         fetchRequests()
-        fetchUnits()
         setTimeout(() => setSubmitSuccess(false), 4000)
       } else {
-        setSubmitError(data.error || 'Erreur lors de l\'envoi.')
+        setSubmitError(data.error || "Erreur lors de l'envoi.")
       }
     } catch {
       setSubmitError('Erreur réseau.')
@@ -166,29 +146,18 @@ export default function BipperPage() {
     }
   }
 
-  // ─── Status update from portal ──────────────────────────────────────────────
-  async function updateStatus(id, status) {
+  // ─── Mark as completed ──────────────────────────────────────────────────────
+  async function markCompleted(id) {
     try {
       const r = await fetch(`${API}/api/bipper/${id}`, {
         method:      'PATCH',
         credentials: 'include',
         headers:     { 'Content-Type': 'application/json' },
-        body:        JSON.stringify({ status }),
+        body:        JSON.stringify({ status: 'completed' }),
       })
       if (r.ok) fetchRequests()
     } catch {}
   }
-
-  function formatCooldown(cooldownUntil) {
-    if (!cooldownUntil) return ''
-    const remaining = Math.max(0, cooldownUntil - now)
-    const m = Math.floor(remaining / 60000)
-    const s = Math.floor((remaining % 60000) / 1000)
-    return `${m}:${String(s).padStart(2, '0')}`
-  }
-
-  const selectedUnit = units.find(u => u.id === form.unitId)
-  const unitOnCooldown = selectedUnit?.onCooldown
 
   return (
     <Layout title="Bipper — Demandes de renfort">
@@ -222,23 +191,15 @@ export default function BipperPage() {
                   <label className="bip-label">Unité à bipper <span className="bip-required">*</span></label>
                   <div className="bip-units-grid">
                     {units.map(unit => {
-                      const selected   = form.unitId === unit.id
-                      const onCooldown = unit.onCooldown
+                      const selected = form.unitId === unit.id
                       return (
                         <button
                           key={unit.id}
                           type="button"
-                          className={`bip-unit-btn${selected ? ' bip-unit-btn--selected' : ''}${onCooldown ? ' bip-unit-btn--cooldown' : ''}`}
-                          onClick={() => !onCooldown && setForm(f => ({ ...f, unitId: selected ? '' : unit.id }))}
-                          disabled={onCooldown}
-                          title={onCooldown ? `Cooldown : ${formatCooldown(unit.cooldownUntil)}` : unit.label}
+                          className={`bip-unit-btn${selected ? ' bip-unit-btn--selected' : ''}`}
+                          onClick={() => setForm(f => ({ ...f, unitId: selected ? '' : unit.id }))}
                         >
                           <span className="bip-unit-name">{unit.label}</span>
-                          {onCooldown && (
-                            <span className="bip-unit-cooldown">
-                              <IconClock /> {formatCooldown(unit.cooldownUntil)}
-                            </span>
-                          )}
                         </button>
                       )
                     })}
@@ -325,16 +286,11 @@ export default function BipperPage() {
                     <IconCheck /> Demande envoyée ! Le bot Discord va transmettre dans quelques secondes.
                   </div>
                 )}
-                {unitOnCooldown && (
-                  <div className="bip-alert bip-alert--warning">
-                    Cette unité est en cooldown. Sélectionnez une autre unité.
-                  </div>
-                )}
 
                 <button
                   type="submit"
                   className="bip-submit-btn"
-                  disabled={submitting || unitOnCooldown || !form.unitId || !form.hospital || !form.location || !form.interventionType || !form.urgency}
+                  disabled={submitting || !form.unitId || !form.hospital || !form.location || !form.interventionType || !form.urgency}
                 >
                   <IconSend />
                   {submitting ? 'Envoi en cours…' : 'Envoyer la demande'}
@@ -389,23 +345,21 @@ export default function BipperPage() {
                               <span className="bip-req-accepted">✅ {req.acceptedByName}</span>
                             </>
                           )}
+                          {req.completedByName && (
+                            <>
+                              <span className="bip-req-dot">·</span>
+                              <span className="bip-req-completed">✔️ {req.completedByName}</span>
+                            </>
+                          )}
                         </div>
 
-                        {/* Actions de statut */}
+                        {/* Seul bouton disponible après acceptation */}
                         {req.status === 'accepted' && (
                           <button
-                            className="bip-action-btn bip-action-btn--inprogress"
-                            onClick={() => updateStatus(req.id, 'in_progress')}
-                          >
-                            En cours
-                          </button>
-                        )}
-                        {req.status === 'in_progress' && (
-                          <button
                             className="bip-action-btn bip-action-btn--done"
-                            onClick={() => updateStatus(req.id, 'completed')}
+                            onClick={() => markCompleted(req.id)}
                           >
-                            Terminée
+                            Marquée comme terminée
                           </button>
                         )}
                       </div>

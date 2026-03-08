@@ -273,7 +273,7 @@ function ServiceNote({ canEdit }) {
         </div>
       ) : note ? (
         <div className="svc-note-content">
-          <p className="svc-note-text">"{note.content}"</p>
+          <p className="svc-note-text">{note.content}</p>
           <div className="svc-note-meta">
             {note.author} · {timeAgo(note.updatedAt)}
           </div>

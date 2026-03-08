@@ -871,14 +871,6 @@ export default function BBCodeBuilderPage() {
                 <div className="bld-bbcode-pane">
                   <div className="bld-pane-label">
                     Contenu BBCode
-                    <button
-                      className="bld-preview-toggle"
-                      onClick={() => setShowPreview((v) => !v)}
-                      title={showPreview ? 'Masquer aperçu' : 'Afficher aperçu'}
-                    >
-                      {showPreview ? <EyeOff size={13} /> : <Eye size={13} />}
-                      {showPreview ? 'Masquer aperçu' : 'Aperçu'}
-                    </button>
                   </div>
 
                   <BBCodeToolbar
@@ -889,29 +881,15 @@ export default function BBCodeBuilderPage() {
                   <textarea
                     ref={textareaRef}
                     className="bld-bbcode-area"
-                    style={{ display: showPreview ? 'none' : undefined }}
                     value={editing.bbcode}
                     onChange={(e) => patchEditing({ bbcode: e.target.value })}
                     placeholder="Écris ton BBCode ici. Colle les tokens {{section.champ}} aux endroits voulus."
                     spellCheck={false}
                   />
 
-                  {showPreview && (
-                    <div className="bld-preview-box" style={{ flex: 1, minHeight: 400 }}>
-                      <div className="bld-preview-label">Aperçu</div>
-                      <div
-                        className="bld-preview-content"
-                        style={{ minHeight: 'calc(100% - 32px)' }}
-                        dangerouslySetInnerHTML={{ __html: bbcodeToHtml(editing.bbcode || '') }}
-                      />
-                    </div>
-                  )}
-
-                  {!showPreview && (
-                    <div className="bld-bbcode-hint">
-                      Copie un token depuis les champs à droite et colle-le dans le BBCode ci-dessus.
-                    </div>
-                  )}
+                  <div className="bld-bbcode-hint">
+                    Copie un token depuis les champs à droite et colle-le dans le BBCode ci-dessus.
+                  </div>
                 </div>
 
                 {/* Fields pane */}

@@ -7,11 +7,9 @@ const router      = express.Router()
 const DATA_DIR    = join(__dirname, '..', 'data')
 const BIPPER_FILE = join(DATA_DIR, 'bipper-requests.json')
 
-const COOLDOWN_MS = 10 * 60 * 1000 // 10 minutes
-
 const UNITS = [
   { id: 'nfd',         label: 'NFD',                    roleId: '816032347790114856' },
-  { id: 'dsco',        label: 'DSCO',                   roleId: '88013481852286979'  },
+  { id: 'dcso',        label: 'DCSO',                   roleId: '880134818522869791' },
   { id: 'paramedical', label: 'Dept. Paramédical',      roleId: '805481706450714624' },
   { id: 'urgences',    label: "Médecine d'Urgence",     roleId: '805481782748643348' },
   { id: 'generale',    label: 'Médecine Générale',      roleId: '805481783591960626' },
@@ -41,28 +39,9 @@ function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 5)
 }
 
-// GET /api/bipper/units — liste des unités + état du cooldown
+// GET /api/bipper/units — liste des unités
 router.get('/units', requireAuth, (req, res) => {
-  const requests = loadRequests()
-  const now      = Date.now()
-
-  const units = UNITS.map(unit => {
-    const lastSent = requests
-      .filter(r => r.unitId === unit.id)
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]
-
-    const cooldownUntil = lastSent
-      ? new Date(lastSent.createdAt).getTime() + COOLDOWN_MS
-      : 0
-
-    return {
-      ...unit,
-      onCooldown:    now < cooldownUntil,
-      cooldownUntil: cooldownUntil > now ? cooldownUntil : null,
-    }
-  })
-
-  res.json({ units, hospitals: HOSPITALS })
+  res.json({ units: UNITS, hospitals: HOSPITALS })
 })
 
 // GET /api/bipper — 30 dernières demandes
@@ -88,47 +67,31 @@ router.post('/', requireAuth, (req, res) => {
   if (!hosp) return res.status(400).json({ error: 'Hôpital inconnu' })
 
   const requests = loadRequests()
-  const now      = Date.now()
-
-  // Vérification du cooldown
-  const lastSent = requests
-    .filter(r => r.unitId === unitId)
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]
-
-  if (lastSent) {
-    const cooldownUntil = new Date(lastSent.createdAt).getTime() + COOLDOWN_MS
-    if (now < cooldownUntil) {
-      const remaining = Math.ceil((cooldownUntil - now) / 1000 / 60)
-      return res.status(429).json({
-        error: `Cooldown actif. Réessayez dans ${remaining} min.`,
-        cooldownUntil,
-      })
-    }
-  }
 
   const newRequest = {
-    id:               generateId(),
+    id:                    generateId(),
     unitId,
-    unitRoleId:       unit.roleId,
-    unitLabel:        unit.label,
-    hospital:         hosp.id,
-    hospitalLabel:    hosp.label,
-    channelId:        hosp.channelId,
-    location:         location.trim(),
-    interventionType: interventionType.trim(),
+    unitRoleId:            unit.roleId,
+    unitLabel:             unit.label,
+    hospital:              hosp.id,
+    hospitalLabel:         hosp.label,
+    channelId:             hosp.channelId,
+    location:              location.trim(),
+    interventionType:      interventionType.trim(),
     urgency,
-    info:             info?.trim() || null,
-    requestedByName:  req.user.name,
-    requestedById:    req.user.discordId,
-    status:           'pending',
-    discordSent:      false,
-    discordMessageId: null,
-    discordChannelId: hosp.channelId,
-    acceptedBy:       null,
-    acceptedByName:   null,
-    acceptedAt:       null,
-    createdAt:        new Date().toISOString(),
-    updatedAt:        new Date().toISOString(),
+    info:                  info?.trim() || null,
+    requestedByName:       req.user.name,
+    requestedById:         req.user.discordId,
+    status:                'pending',
+    discordSent:           false,
+    discordMessageId:      null,
+    discordChannelId:      hosp.channelId,
+    discordCompletionSent: false,
+    acceptedBy:            null,
+    acceptedByName:        null,
+    acceptedAt:            null,
+    createdAt:             new Date().toISOString(),
+    updatedAt:             new Date().toISOString(),
   }
 
   requests.push(newRequest)
@@ -140,7 +103,7 @@ router.post('/', requireAuth, (req, res) => {
 // PATCH /api/bipper/:id — mise à jour du statut
 router.patch('/:id', requireAuth, (req, res) => {
   const { status } = req.body || {}
-  const valid = ['pending', 'accepted', 'in_progress', 'completed']
+  const valid = ['pending', 'accepted', 'completed']
 
   if (!valid.includes(status))
     return res.status(400).json({ error: 'Statut invalide' })
@@ -156,6 +119,13 @@ router.patch('/:id', requireAuth, (req, res) => {
     requests[idx].acceptedBy     = req.user.discordId
     requests[idx].acceptedByName = req.user.name
     requests[idx].acceptedAt     = new Date().toISOString()
+  }
+
+  // Quand terminée → le bot doit mettre à jour l'embed
+  if (status === 'completed') {
+    requests[idx].completedByName = req.user.name
+    requests[idx].completedAt     = new Date().toISOString()
+    requests[idx].discordCompletionSent = false
   }
 
   saveRequests(requests)

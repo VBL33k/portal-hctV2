@@ -76,6 +76,13 @@ const IconBook = () => (
     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
   </svg>
 )
+const IconRadio = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/>
+    <line x1="8" y1="23" x2="16" y2="23"/>
+  </svg>
+)
 const IconChart = () => (
   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
@@ -108,6 +115,7 @@ const NAV_LINKS = [
   { to: '/services',       icon: <IconHeart />,    label: 'Prise de service' },
   { to: '/bbcode/fill',    icon: <IconFileCode />, label: 'BBCode' },
   { to: '/annonces',       icon: <IconBell />,     label: 'Annonces' },
+  { to: '/bipper',         icon: <IconRadio />,    label: 'Bipper' },
 ]
 
 const NAV_LINKS_SPV = [

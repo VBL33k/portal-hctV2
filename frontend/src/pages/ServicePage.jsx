@@ -14,6 +14,7 @@ const API = import.meta.env.VITE_API_URL || ''
 // Role IDs with level >= 11 (HDP and above) — mirrors backend config/roles.js
 const MANAGER_ROLE_IDS = new Set([
   '809086773326118952', // HDP (11)
+  '1140657047126425660',// SHIFT_SPV (12)
   '805518674806046733', // DEPUTY_CHIEF (13)
   '805481782119104522', // CHIEF (14)
   '805551419905015818', // DEO (15)

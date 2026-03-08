@@ -3008,7 +3008,20 @@ a.nav-item { text-decoration: none; }
 .bip-empty-icon { font-size: 2.2rem; margin-bottom: 10px; opacity: 0.4; }
 .bip-empty-text { font-size: 0.82rem; font-weight: 600; }
 
-.bip-req-list { display: flex; flex-direction: column; gap: 10px; max-height: 640px; overflow-y: auto; }
+.bip-requests-col .bip-card {
+  max-height: 680px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.bip-req-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  padding-right: 4px;
+  flex: 1;
+}
 .bip-req-list::-webkit-scrollbar       { width: 3px; }
 .bip-req-list::-webkit-scrollbar-track { background: transparent; }
 .bip-req-list::-webkit-scrollbar-thumb { background: rgba(226,85,40,0.3); border-radius: 2px; }
@@ -3114,31 +3127,56 @@ a.nav-item { text-decoration: none; }
   flex-wrap: wrap;
 }
 .bip-req-dot { opacity: 0.4; }
-.bip-req-accepted { color: #4ade80; font-weight: 600; }
+.bip-req-accepted  { color: #4ade80; font-weight: 600; }
+.bip-req-completed { color: #86efac; font-weight: 600; }
+
+/* Action buttons row */
+.bip-req-btns {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
 
 /* Action buttons */
 .bip-action-btn {
   font-family: var(--font);
   font-size: 0.72rem;
   font-weight: 700;
-  padding: 5px 12px;
+  padding: 5px 10px;
   border-radius: 6px;
   cursor: pointer;
   transition: background .15s;
-  border: none;
+  border: 1px solid transparent;
+  background: rgba(255,255,255,0.06);
+  color: var(--secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
-.bip-action-btn--inprogress {
-  background: var(--orange-dim);
-  color: var(--orange);
-  border: 1px solid rgba(226,85,40,0.3);
-}
-.bip-action-btn--inprogress:hover { background: rgba(226,85,40,0.25); }
+.bip-action-btn:hover { background: rgba(255,255,255,0.1); }
 .bip-action-btn--done {
   background: rgba(34,197,94,0.12);
   color: #22c55e;
-  border: 1px solid rgba(34,197,94,0.25);
+  border-color: rgba(34,197,94,0.25);
 }
 .bip-action-btn--done:hover { background: rgba(34,197,94,0.22); }
+.bip-action-btn--delete {
+  background: rgba(239,68,68,0.1);
+  color: #ef4444;
+  border-color: rgba(239,68,68,0.25);
+  padding: 5px 8px;
+}
+.bip-action-btn--delete:hover { background: rgba(239,68,68,0.2); }
+
+/* Confirm delete */
+.bip-confirm-del {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  color: var(--secondary);
+}
 
 /* ── Responsive ── */
 @media (max-width: 1000px) {

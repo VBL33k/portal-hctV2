@@ -198,6 +198,24 @@ function startBipperPolling() {
             console.error(`❌ Bipper completion update error [${req.id}]:`, err.message)
           }
         }
+
+        // 3. Supprimer le message Discord si demande supprimée depuis le portail
+        if (req.discordDeletePending && req.discordMessageId) {
+          try {
+            const channel = await client.channels.fetch(req.channelId)
+            if (channel) {
+              const msg = await channel.messages.fetch(req.discordMessageId).catch(() => null)
+              if (msg) await msg.delete()
+            }
+            // Retirer de la liste une fois supprimé
+            const idx = requests.indexOf(req)
+            if (idx !== -1) requests.splice(idx, 1)
+            changed = true
+            console.log(`🗑️ Bipper supprimé [${req.id}] — message Discord effacé`)
+          } catch (err) {
+            console.error(`❌ Bipper delete error [${req.id}]:`, err.message)
+          }
+        }
       }
 
       if (changed) saveRequests(requests)

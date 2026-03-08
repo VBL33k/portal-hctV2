@@ -4,6 +4,18 @@ import Layout from '../components/Layout.jsx'
 
 const API = import.meta.env.VITE_API_URL || ''
 
+const FULL_ADMIN_ROLE_IDS = new Set([
+  '805518674806046733',  // DEPUTY_CHIEF
+  '805481782119104522',  // CHIEF
+  '805551419905015818',  // DEO
+  '805508029151313921',  // CEO
+  '1377632925939666974', // DRH
+  '1407313203326877696', // RH_SIMPLE
+])
+function isFullAdmin(user) {
+  return (user?.roles || []).some(r => FULL_ADMIN_ROLE_IDS.has(r))
+}
+
 // ─── Status helpers ────────────────────────────────────────────────────────────
 const STATUS_LABEL = {
   pending:   'En attente',
@@ -57,6 +69,12 @@ const IconCheck = () => (
     <polyline points="20 6 9 17 4 12"/>
   </svg>
 )
+const IconTrash = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+    <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+  </svg>
+)
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function BipperPage() {
@@ -80,6 +98,8 @@ export default function BipperPage() {
   // Requests panel
   const [requests,    setRequests]    = useState([])
   const [loadingReqs, setLoadingReqs] = useState(true)
+  const [confirmDelete, setConfirmDelete] = useState(null) // id du bipper à supprimer
+  const canAdmin = isFullAdmin(user)
 
   // ─── Fetch units ────────────────────────────────────────────────────────────
   const fetchUnits = useCallback(async () => {
@@ -156,6 +176,20 @@ export default function BipperPage() {
         body:        JSON.stringify({ status: 'completed' }),
       })
       if (r.ok) fetchRequests()
+    } catch {}
+  }
+
+  // ─── Delete bipper ──────────────────────────────────────────────────────────
+  async function deleteBipper(id) {
+    try {
+      const r = await fetch(`${API}/api/bipper/${id}`, {
+        method:      'DELETE',
+        credentials: 'include',
+      })
+      if (r.ok) {
+        setConfirmDelete(null)
+        fetchRequests()
+      }
     } catch {}
   }
 
@@ -353,15 +387,34 @@ export default function BipperPage() {
                           )}
                         </div>
 
-                        {/* Seul bouton disponible après acceptation */}
-                        {req.status === 'accepted' && (
-                          <button
-                            className="bip-action-btn bip-action-btn--done"
-                            onClick={() => markCompleted(req.id)}
-                          >
-                            Marquée comme terminée
-                          </button>
-                        )}
+                        <div className="bip-req-btns">
+                          {/* Seul bouton de transition disponible après acceptation */}
+                          {req.status === 'accepted' && (
+                            <button
+                              className="bip-action-btn bip-action-btn--done"
+                              onClick={() => markCompleted(req.id)}
+                            >
+                              Marquée comme terminée
+                            </button>
+                          )}
+                          {/* Bouton supprimer — Deputy Chief+ uniquement */}
+                          {canAdmin && confirmDelete !== req.id && (
+                            <button
+                              className="bip-action-btn bip-action-btn--delete"
+                              onClick={() => setConfirmDelete(req.id)}
+                              title="Supprimer"
+                            >
+                              <IconTrash />
+                            </button>
+                          )}
+                          {canAdmin && confirmDelete === req.id && (
+                            <div className="bip-confirm-del">
+                              <span>Supprimer ?</span>
+                              <button className="bip-action-btn bip-action-btn--delete" onClick={() => deleteBipper(req.id)}>Oui</button>
+                              <button className="bip-action-btn" onClick={() => setConfirmDelete(null)}>Non</button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}

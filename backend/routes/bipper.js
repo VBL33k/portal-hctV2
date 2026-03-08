@@ -2,6 +2,7 @@ const express = require('express')
 const { readFileSync, writeFileSync, existsSync, mkdirSync } = require('fs')
 const { join }  = require('path')
 const { requireAuth } = require('../middleware/auth.js')
+const { isFullAdmin }  = require('../config/roles.js')
 
 const router      = express.Router()
 const DATA_DIR    = join(__dirname, '..', 'data')
@@ -44,10 +45,11 @@ router.get('/units', requireAuth, (req, res) => {
   res.json({ units: UNITS, hospitals: HOSPITALS })
 })
 
-// GET /api/bipper — 30 dernières demandes
+// GET /api/bipper — 30 dernières demandes (filtre les suppressions en attente)
 router.get('/', requireAuth, (req, res) => {
   const requests = loadRequests()
   const sorted   = requests
+    .filter(r => !r.discordDeletePending)
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 30)
   res.json({ requests: sorted })
@@ -130,6 +132,31 @@ router.patch('/:id', requireAuth, (req, res) => {
 
   saveRequests(requests)
   res.json({ success: true, request: requests[idx] })
+})
+
+// DELETE /api/bipper/:id — Deputy Chief+ seulement
+router.delete('/:id', requireAuth, (req, res) => {
+  if (!isFullAdmin(req.user?.roles || []))
+    return res.status(403).json({ error: 'Réservé aux Deputy Chief et supérieurs' })
+
+  const requests = loadRequests()
+  const idx = requests.findIndex(r => r.id === req.params.id)
+  if (idx === -1) return res.status(404).json({ error: 'Demande introuvable' })
+
+  const req_ = requests[idx]
+
+  if (req_.discordMessageId) {
+    // Laisser le bot supprimer le message Discord, puis retirer de la liste
+    requests[idx].discordDeletePending = true
+    requests[idx].updatedAt = new Date().toISOString()
+    saveRequests(requests)
+  } else {
+    // Pas de message Discord, suppression directe
+    requests.splice(idx, 1)
+    saveRequests(requests)
+  }
+
+  res.json({ success: true })
 })
 
 module.exports = router

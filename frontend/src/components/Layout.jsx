@@ -10,7 +10,6 @@ const SPV_ROLE_IDS = new Set([
   '805551419905015818',  // DEO
   '805508029151313921',  // CEO
   '1377632925939666974', // DRH
-  '1407313203326877696', // RH_SIMPLE (level 13 same as deputy)
 ])
 
 // Full admin role IDs (Deputy Chief et supérieurs)
@@ -20,7 +19,6 @@ const FULL_ADMIN_ROLE_IDS = new Set([
   '805551419905015818',  // DEO
   '805508029151313921',  // CEO
   '1377632925939666974', // DRH
-  '1407313203326877696', // RH_SIMPLE
 ])
 
 function isSupervisor(user) {

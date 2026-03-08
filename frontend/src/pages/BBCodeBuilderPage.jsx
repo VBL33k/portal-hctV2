@@ -32,14 +32,13 @@ import Layout from '../components/Layout.jsx'
 const API = import.meta.env.VITE_API_URL || ''
 
 const SPV_ROLE_IDS = new Set([
-  '1140657047126425660',
-  '809086773326118952',
-  '805518674806046733',
-  '1407313203326877696',
-  '805481782119104522',
-  '805551419905015818',
-  '805508029151313921',
-  '1377632925939666974',
+  '1140657047126425660', // SHIFT_SPV
+  '809086773326118952',  // HDP
+  '805518674806046733',  // DEPUTY_CHIEF
+  '805481782119104522',  // CHIEF
+  '805551419905015818',  // DEO
+  '805508029151313921',  // CEO
+  '1377632925939666974', // DRH
 ])
 
 const FULL_ADMIN_ROLE_IDS = new Set([
@@ -48,7 +47,6 @@ const FULL_ADMIN_ROLE_IDS = new Set([
   '805551419905015818',  // DEO
   '805508029151313921',  // CEO
   '1377632925939666974', // DRH
-  '1407313203326877696', // RH_SIMPLE
 ])
 
 function isSupervisor(user) {
@@ -68,7 +66,7 @@ const CATEGORIES_FALLBACK = [
   { id: 'med-legale', label: 'Médecine Légale',        icon: 'https://zupimages.net/up/23/30/x0x4.png' },
   { id: 'rh',         label: 'RH',                    icon: 'https://zupimages.net/up/25/45/s9h6.png' },
   { id: 'direction',  label: 'Direction Etablissement', icon: 'https://www.zupimages.net/up/24/16/ii0u.png', restricted: true },
-  { id: 'autres',     label: 'Autres',                icon: 'https://i.ibb.co/Zzzf4jmv/5895032.png' },
+  { id: 'autres',     label: 'Autres',                icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M20 6H12L10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z' fill='%236366f1' fill-opacity='0.2'/%3E%3Cpath d='M20 6H12L10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z' stroke='%236366f1' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='8.5' cy='13.5' r='1.5' fill='%236366f1'/%3E%3Ccircle cx='12' cy='13.5' r='1.5' fill='%236366f1'/%3E%3Ccircle cx='15.5' cy='13.5' r='1.5' fill='%236366f1'/%3E%3C/svg%3E" },
 ]
 
 const FIELD_TYPES = [

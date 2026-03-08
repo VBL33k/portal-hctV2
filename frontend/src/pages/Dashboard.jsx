@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import Layout from '../components/Layout.jsx'
@@ -24,7 +24,6 @@ const SHIFT_SPV_ROLE_IDS = new Set([
   '805551419905015818',  // DEO
   '805508029151313921',  // CEO
   '1377632925939666974', // DRH
-  '1407313203326877696', // RH_SIMPLE
 ])
 // Full admin role IDs — accès complet (Deputy Chief et supérieurs)
 const FULL_ADMIN_ROLE_IDS = new Set([
@@ -33,7 +32,6 @@ const FULL_ADMIN_ROLE_IDS = new Set([
   '805551419905015818',  // DEO
   '805508029151313921',  // CEO
   '1377632925939666974', // DRH
-  '1407313203326877696', // RH_SIMPLE
 ])
 function isSupervisor(user) {
   return (user?.roles || []).some(r => SPV_ROLE_IDS.has(r))
@@ -198,6 +196,7 @@ function ServiceNote({ canEdit }) {
   const [draft, setDraft]       = useState('')
   const [saving, setSaving]     = useState(false)
   const [confirmDel, setConfirmDel] = useState(false)
+  const noteRef = useRef(null)
 
   useEffect(() => {
     fetch(`${API}/api/note`, { credentials: 'include' })
@@ -205,6 +204,61 @@ function ServiceNote({ canEdit }) {
       .then(data => { if (data?.note) setNote(data.note) })
       .catch(() => {})
   }, [])
+
+  function applyFormat(open, close, isLine = false) {
+    const el = noteRef.current
+    if (!el) return
+    const start = el.selectionStart
+    const end   = el.selectionEnd
+    const val   = draft
+    if (isLine) {
+      const lineStart = val.lastIndexOf('\n', start - 1) + 1
+      const lineEnd   = val.indexOf('\n', start)
+      const lineText  = val.slice(lineStart, lineEnd === -1 ? val.length : lineEnd)
+      let newVal
+      if (lineText.startsWith('# ')) {
+        newVal = val.slice(0, lineStart) + lineText.slice(2) + val.slice(lineEnd === -1 ? val.length : lineEnd)
+      } else {
+        newVal = val.slice(0, lineStart) + '# ' + lineText + val.slice(lineEnd === -1 ? val.length : lineEnd)
+      }
+      setDraft(newVal.slice(0, 800))
+      setTimeout(() => { el.focus() }, 0)
+      return
+    }
+    const selected = val.slice(start, end)
+    const newVal = val.slice(0, start) + open + selected + close + val.slice(end)
+    setDraft(newVal.slice(0, 800))
+    setTimeout(() => {
+      el.focus()
+      const newStart = start + open.length
+      const newEnd   = newStart + selected.length
+      el.setSelectionRange(newStart, newEnd)
+    }, 0)
+  }
+
+  function parseInline(text) {
+    const regex = /(\*\*[^*\n]+\*\*|\*[^*\n]+\*|~~[^~\n]+~~)/g
+    const parts = []
+    let last = 0, m
+    while ((m = regex.exec(text)) !== null) {
+      if (m.index > last) parts.push(text.slice(last, m.index))
+      const token = m[0]
+      if (token.startsWith('**'))      parts.push(<strong key={m.index}>{token.slice(2, -2)}</strong>)
+      else if (token.startsWith('~~')) parts.push(<s key={m.index}>{token.slice(2, -2)}</s>)
+      else                             parts.push(<em key={m.index}>{token.slice(1, -1)}</em>)
+      last = m.index + token.length
+    }
+    if (last < text.length) parts.push(text.slice(last))
+    return parts.length ? parts : text
+  }
+
+  function renderNoteContent(content) {
+    return content.split('\n').map((line, i) => {
+      if (!line.trim()) return <div key={i} className="svc-note-spacer" />
+      if (line.startsWith('# ')) return <div key={i} className="svc-note-title">{parseInline(line.slice(2))}</div>
+      return <p key={i} className="svc-note-line">{parseInline(line)}</p>
+    })
+  }
 
   async function handleSave() {
     if (!draft.trim()) return
@@ -267,15 +321,23 @@ function ServiceNote({ canEdit }) {
 
       {editing ? (
         <div className="svc-note-edit">
+          <div className="svc-note-toolbar">
+            <button type="button" className="svc-note-tool svc-note-tool--bold"    title="Gras"     onMouseDown={e => { e.preventDefault(); applyFormat('**', '**') }}>B</button>
+            <button type="button" className="svc-note-tool svc-note-tool--italic"  title="Italique" onMouseDown={e => { e.preventDefault(); applyFormat('*', '*') }}>I</button>
+            <button type="button" className="svc-note-tool svc-note-tool--strike"  title="Barré"    onMouseDown={e => { e.preventDefault(); applyFormat('~~', '~~') }}>S</button>
+            <span className="svc-note-tool-sep" />
+            <button type="button" className="svc-note-tool svc-note-tool--heading" title="Titre (ligne courante)" onMouseDown={e => { e.preventDefault(); applyFormat('', '', true) }}>H1</button>
+          </div>
           <textarea
+            ref={noteRef}
             className="svc-note-textarea"
             value={draft}
-            onChange={e => setDraft(e.target.value.slice(0, 500))}
-            placeholder="Rédigez votre note de service…"
+            onChange={e => setDraft(e.target.value.slice(0, 800))}
+            placeholder="Rédigez votre note… Sélectionnez du texte, puis B / I / S pour le formater."
             autoFocus
           />
           <div className="svc-note-edit-footer">
-            <span className="svc-note-chars">{draft.length}/500</span>
+            <span className="svc-note-chars">{draft.length}/800</span>
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="svc-note-btn" onClick={() => setEditing(false)}><IconX /> Annuler</button>
               <button className="svc-note-btn svc-note-btn--save" onClick={handleSave} disabled={saving || !draft.trim()}>
@@ -286,7 +348,7 @@ function ServiceNote({ canEdit }) {
         </div>
       ) : note ? (
         <div className="svc-note-content">
-          <p className="svc-note-text">{note.content}</p>
+          <div className="svc-note-body">{renderNoteContent(note.content)}</div>
           <div className="svc-note-meta">
             {note.author} · {timeAgo(note.updatedAt)}
           </div>

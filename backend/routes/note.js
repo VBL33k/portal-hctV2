@@ -31,8 +31,8 @@ router.post('/', requireAuth, (req, res) => {
   const { content } = req.body || {}
   if (!content?.trim())
     return res.status(400).json({ error: 'Contenu requis' })
-  if (content.trim().length > 500)
-    return res.status(400).json({ error: 'Maximum 500 caractères' })
+  if (content.trim().length > 800)
+    return res.status(400).json({ error: 'Maximum 800 caractères' })
 
   const note = {
     content:    content.trim(),

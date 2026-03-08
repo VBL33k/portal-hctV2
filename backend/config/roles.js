@@ -42,7 +42,7 @@ const ROLE_HIERARCHY = {
   [ROLE_IDS.DEO]:             15,
   [ROLE_IDS.CEO]:             16,
   [ROLE_IDS.DRH]:             17,
-  [ROLE_IDS.RH_SIMPLE]:       13,
+  [ROLE_IDS.RH_SIMPLE]:        5,
 }
 
 const ROLE_NAMES = {

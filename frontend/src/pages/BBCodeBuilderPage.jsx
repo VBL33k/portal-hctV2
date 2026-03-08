@@ -67,7 +67,7 @@ const CATEGORIES_FALLBACK = [
   { id: 'chirurgie',  label: 'Chirurgie',              icon: 'https://zupimages.net/up/24/16/aghk.png' },
   { id: 'med-legale', label: 'Médecine Légale',        icon: 'https://zupimages.net/up/23/30/x0x4.png' },
   { id: 'rh',         label: 'RH',                    icon: 'https://zupimages.net/up/25/45/s9h6.png' },
-  { id: 'direction',  label: 'Direction Etablissement', icon: 'https://zupimages.net/up/25/45/s9h6.png', restricted: true },
+  { id: 'direction',  label: 'Direction Etablissement', icon: 'https://www.zupimages.net/up/24/16/ii0u.png', restricted: true },
   { id: 'autres',     label: 'Autres',                icon: 'https://i.ibb.co/Zzzf4jmv/5895032.png' },
 ]
 

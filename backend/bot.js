@@ -41,23 +41,17 @@ const URGENCY_COLORS = {
   'Critique': 0xef4444,
 }
 const URGENCY_BARS = {
-  'Faible':   '█░░░',
-  'Modérée':  '██░░',
-  'Élevée':   '███░',
-  'Critique': '████',
-}
-const URGENCY_LABEL = {
-  'Faible':   '🟢 Faible',
-  'Modérée':  '🟡 Modérée',
-  'Élevée':   '🟠 Élevée',
-  'Critique': '🔴 CRITIQUE',
+  'Faible':   '█░░░  Faible',
+  'Modérée':  '██░░  Modérée',
+  'Élevée':   '███░  Élevée',
+  'Critique': '████  CRITIQUE',
 }
 
 function buildBipperEmbed(req) {
   const color = URGENCY_COLORS[req.urgency] || 0x5865F2
-  const bar   = URGENCY_BARS[req.urgency]   || '░░░░'
+  const bar   = URGENCY_BARS[req.urgency]   || req.urgency
 
-  // Résoudre les noms des accepteurs (compat ancien format string / nouveau array)
+  // Compat ancien format string / nouveau array
   const acceptedNames = Array.isArray(req.acceptedByNames) && req.acceptedByNames.length
     ? req.acceptedByNames.join(', ')
     : (req.acceptedByName || null)
@@ -65,44 +59,45 @@ function buildBipperEmbed(req) {
   const isCompleted = req.status === 'completed'
   const isPending   = req.status === 'pending'
 
-  const statusLine = isCompleted
+  const statusBlock = isCompleted
     ? '```diff\n+ TERMINÉE\n```'
     : isPending
       ? '```fix\n  EN ATTENTE\n```'
-      : '```yaml\n  ACCEPTÉE\n```'
+      : '```yaml\n  PRISE EN CHARGE\n```'
+
+  const description = isCompleted
+    ? `> Cette demande a été **clôturée** avec succès.\n${statusBlock}`
+    : `> Demande émise depuis le **Portail HCT**.\n> Réagissez avec ✅ pour la prendre en charge.\n${statusBlock}`
 
   const embed = new EmbedBuilder()
-    .setTitle(`📡  DEMANDE DE RENFORT  —  ${req.unitLabel}`)
+    .setTitle(`DEMANDE DE RENFORT  ·  ${req.unitLabel}`)
     .setColor(isCompleted ? 0x22c55e : color)
-    .setDescription(
-      isCompleted
-        ? `> ✅  Cette demande a été **clôturée** avec succès.\n${statusLine}`
-        : `> Une demande de renfort vient d'être émise depuis le **Portail HCT**.\n> Réagissez avec ✅ pour la prendre en charge.\n${statusLine}`
-    )
+    .setDescription(description)
     .addFields(
-      { name: '🏥  Hôpital',             value: `**${req.hospitalLabel}**`,                         inline: true  },
-      { name: '📍  Localisation',        value: `\`${req.location}\``,                               inline: true  },
-      { name: '\u200b',                  value: '\u200b',                                            inline: true  },
-      { name: '🏷️  Intervention',       value: req.interventionType,                                inline: false },
-      { name: '⚡  Urgence',             value: `${URGENCY_LABEL[req.urgency] || req.urgency}  ${bar}`, inline: true  },
-      { name: '👤  Demandé par',         value: req.requestedByName,                                 inline: true  },
+      { name: 'Hôpital',       value: `**${req.hospitalLabel}**`, inline: true  },
+      { name: 'Localisation',  value: `\`${req.location}\``,       inline: true  },
+      { name: '\u200b',        value: '\u200b',                    inline: true  },
+      { name: 'Intervention',  value: req.interventionType,        inline: false },
+      { name: 'Urgence',       value: `\`\`\`${bar}\`\`\``,        inline: true  },
+      { name: 'Demandé par',   value: req.requestedByName,         inline: true  },
     )
-    .setFooter({ text: 'HCT Healthcare Portal  ·  #bipper' })
+    .setFooter({ text: 'HCT Healthcare  ·  Portail Bipper' })
     .setTimestamp(new Date(req.createdAt))
 
   if (req.info) {
-    embed.addFields({ name: '💬  Informations complémentaires', value: `> ${req.info}`, inline: false })
+    embed.addFields({ name: 'Informations complémentaires', value: `> ${req.info}`, inline: false })
   }
 
   if (acceptedNames) {
-    const label = (Array.isArray(req.acceptedByNames) && req.acceptedByNames.length > 1)
-      ? `✅  Pris en charge par (${req.acceptedByNames.length})`
-      : '✅  Pris en charge par'
+    const count = Array.isArray(req.acceptedByNames) ? req.acceptedByNames.length : 1
+    const label = count > 1
+      ? `Pris en charge par (${count})`
+      : 'Pris en charge par'
     embed.addFields({ name: label, value: `**${acceptedNames}**`, inline: true })
   }
 
   if (req.completedByName) {
-    embed.addFields({ name: '🏁  Clôturé par', value: `**${req.completedByName}**`, inline: true })
+    embed.addFields({ name: 'Clôturé par', value: `**${req.completedByName}**`, inline: true })
   }
 
   return embed

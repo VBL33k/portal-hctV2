@@ -2723,7 +2723,9 @@ a.nav-item { text-decoration: none; }
   gap: 0;
   max-height: 400px;
   overflow-y: auto;
+  overflow-x: visible;
   padding-right: 6px;
+  padding-left: 4px;  /* évite que le glow du dot soit rogné par overflow */
   scrollbar-width: thin;
   scrollbar-color: rgba(99,102,241,0.4) rgba(255,255,255,0.03);
 }

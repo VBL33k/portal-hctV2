@@ -42,19 +42,33 @@ const SPV_ROLE_IDS = new Set([
   '1377632925939666974',
 ])
 
+const FULL_ADMIN_ROLE_IDS = new Set([
+  '805518674806046733',  // DEPUTY_CHIEF
+  '805481782119104522',  // CHIEF
+  '805551419905015818',  // DEO
+  '805508029151313921',  // CEO
+  '1377632925939666974', // DRH
+  '1407313203326877696', // RH_SIMPLE
+])
+
 function isSupervisor(user) {
   return (user?.roles || []).some((r) => SPV_ROLE_IDS.has(r))
 }
 
+function isFullAdmin(user) {
+  return (user?.roles || []).some((r) => FULL_ADMIN_ROLE_IDS.has(r))
+}
+
 const CATEGORIES_FALLBACK = [
-  { id: 'emt', label: 'EMT', icon: 'https://zupimages.net/up/24/16/127a.png' },
-  { id: 'mers', label: 'MERS', icon: 'https://zupimages.net/up/24/16/u8bk.png' },
-  { id: 'med-gen', label: 'Médecine Générale', icon: 'https://zupimages.net/up/23/35/br9g.png' },
-  { id: 'psy', label: 'Psychiatrie', icon: 'https://zupimages.net/up/24/16/rn70.png' },
-  { id: 'chirurgie', label: 'Chirurgie', icon: 'https://zupimages.net/up/24/16/aghk.png' },
-  { id: 'med-legale', label: 'Médecine Légale', icon: 'https://zupimages.net/up/23/30/x0x4.png' },
-  { id: 'rh', label: 'RH', icon: 'https://zupimages.net/up/25/45/s9h6.png' },
-  { id: 'autres', label: 'Autres', icon: 'https://i.ibb.co/Zzzf4jmv/5895032.png' },
+  { id: 'emt',        label: 'EMT',                    icon: 'https://zupimages.net/up/24/16/127a.png' },
+  { id: 'mers',       label: 'MERS',                   icon: 'https://zupimages.net/up/24/16/u8bk.png' },
+  { id: 'med-gen',    label: 'Médecine Générale',      icon: 'https://zupimages.net/up/23/35/br9g.png' },
+  { id: 'psy',        label: 'Psychiatrie',            icon: 'https://zupimages.net/up/24/16/rn70.png' },
+  { id: 'chirurgie',  label: 'Chirurgie',              icon: 'https://zupimages.net/up/24/16/aghk.png' },
+  { id: 'med-legale', label: 'Médecine Légale',        icon: 'https://zupimages.net/up/23/30/x0x4.png' },
+  { id: 'rh',         label: 'RH',                    icon: 'https://zupimages.net/up/25/45/s9h6.png' },
+  { id: 'direction',  label: 'Direction Etablissement', icon: 'https://zupimages.net/up/25/45/s9h6.png', restricted: true },
+  { id: 'autres',     label: 'Autres',                icon: 'https://i.ibb.co/Zzzf4jmv/5895032.png' },
 ]
 
 const FIELD_TYPES = [
@@ -875,23 +889,27 @@ export default function BBCodeBuilderPage() {
                   <textarea
                     ref={textareaRef}
                     className="bld-bbcode-area"
+                    style={{ display: showPreview ? 'none' : undefined }}
                     value={editing.bbcode}
                     onChange={(e) => patchEditing({ bbcode: e.target.value })}
                     placeholder="Écris ton BBCode ici. Colle les tokens {{section.champ}} aux endroits voulus."
                     spellCheck={false}
                   />
 
-                  <div className="bld-bbcode-hint">
-                    Copie un token depuis les champs a droite et colle-le dans le BBCode ci-dessus.
-                  </div>
-
                   {showPreview && (
-                    <div className="bld-preview-box">
+                    <div className="bld-preview-box" style={{ flex: 1, minHeight: 400 }}>
                       <div className="bld-preview-label">Aperçu</div>
                       <div
                         className="bld-preview-content"
+                        style={{ minHeight: 'calc(100% - 32px)' }}
                         dangerouslySetInnerHTML={{ __html: bbcodeToHtml(editing.bbcode || '') }}
                       />
+                    </div>
+                  )}
+
+                  {!showPreview && (
+                    <div className="bld-bbcode-hint">
+                      Copie un token depuis les champs à droite et colle-le dans le BBCode ci-dessus.
                     </div>
                   )}
                 </div>

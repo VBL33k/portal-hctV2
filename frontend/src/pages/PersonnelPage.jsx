@@ -162,6 +162,7 @@ function MemberModal({ userId, onClose }) {
   const [demoted, setDemoted]   = useState(false)
   const [demoteErr, setDemoteErr] = useState(null)
   const [confirmDemote, setConfirmDemote] = useState(false)
+  const [logSearch, setLogSearch] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -273,6 +274,22 @@ function MemberModal({ userId, onClose }) {
                 </span>
               </div>
 
+              {!loading && detail?.logs?.length > 0 && (
+                <div className="personnel-log-search-wrap">
+                  <IconSearch />
+                  <input
+                    className="personnel-log-search"
+                    type="text"
+                    placeholder="Rechercher par action ou date (ex: 04/03/2026)…"
+                    value={logSearch}
+                    onChange={e => setLogSearch(e.target.value)}
+                  />
+                  {logSearch && (
+                    <button className="personnel-log-search-clear" onClick={() => setLogSearch('')}>✕</button>
+                  )}
+                </div>
+              )}
+
               {loading ? (
                 <div className="personnel-logs-skeleton">
                   {[1,2,3,4].map(i => (
@@ -285,25 +302,38 @@ function MemberModal({ userId, onClose }) {
                     </div>
                   ))}
                 </div>
-              ) : detail?.logs?.length ? (
-                <div className="personnel-logs">
-                  {detail.logs.map((entry, i) => (
-                    <div key={i} className="personnel-log-entry">
-                      <div
-                        className="personnel-log-dot"
-                        style={{ background: ACTION_COLORS[entry.action] || 'rgba(255,255,255,0.3)' }}
-                      />
-                      <div className="personnel-log-content">
-                        <div className="personnel-log-action">
-                          {ACTION_LABELS[entry.action] || entry.action}
-                          {entry.details && <span className="personnel-log-details"> — {entry.details}</span>}
+              ) : detail?.logs?.length ? (() => {
+                const q = logSearch.trim().toLowerCase()
+                const filtered = q
+                  ? detail.logs.filter(entry => {
+                      const label = (ACTION_LABELS[entry.action] || entry.action).toLowerCase()
+                      const date  = fmtDate(entry.timestamp).toLowerCase()
+                      const det   = (entry.details || '').toLowerCase()
+                      return label.includes(q) || date.includes(q) || det.includes(q)
+                    })
+                  : detail.logs
+                return filtered.length ? (
+                  <div className="personnel-logs">
+                    {filtered.map((entry, i) => (
+                      <div key={i} className="personnel-log-entry">
+                        <div
+                          className="personnel-log-dot"
+                          style={{ background: ACTION_COLORS[entry.action] || 'rgba(255,255,255,0.3)' }}
+                        />
+                        <div className="personnel-log-content">
+                          <div className="personnel-log-action">
+                            {ACTION_LABELS[entry.action] || entry.action}
+                            {entry.details && <span className="personnel-log-details"> — {entry.details}</span>}
+                          </div>
+                          <div className="personnel-log-time">{fmtDate(entry.timestamp)}</div>
                         </div>
-                        <div className="personnel-log-time">{fmtDate(entry.timestamp)}</div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
+                    ))}
+                  </div>
+                ) : (
+                  <div className="personnel-logs-empty">Aucun résultat pour « {logSearch} »</div>
+                )
+              })() : (
                 <div className="personnel-logs-empty">Aucune activité enregistrée</div>
               )}
             </div>

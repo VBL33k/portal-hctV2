@@ -165,10 +165,8 @@ export default function Dashboard() {
       .catch(() => {})
   }, [])
 
-  // Personnel est actif pour les full admins — remplace la tuile "soon"
-  const MODULES = isFullAdmin(user)
-    ? MODULES_BASE.map(m => m.title === 'Personnel' ? { ...m, soon: false, to: '/personnel' } : m)
-    : MODULES_BASE
+  // Personnel est actif pour tous les utilisateurs authentifiés
+  const MODULES = MODULES_BASE.map(m => m.title === 'Personnel' ? { ...m, soon: false, to: '/personnel' } : m)
 
   const allModules = (isSupervisor(user) ? [...MODULES, ...MODULES_SPV] : MODULES)
     .sort((a, b) => (a.soon ? 1 : 0) - (b.soon ? 1 : 0))

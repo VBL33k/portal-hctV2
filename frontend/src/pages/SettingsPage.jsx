@@ -389,7 +389,7 @@ export default function SettingsPage() {
                 ))}
               </div>
             ) : serverData?.logs?.length ? (
-              <div className="sett-logs">
+              <div className="sett-logs" style={{ maxHeight: 400, overflowY: 'auto' }}>
                 {serverData.logs.map((entry, i) => (
                   <div key={i} className="sett-log-entry">
                     <div

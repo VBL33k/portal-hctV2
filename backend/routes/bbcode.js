@@ -3,7 +3,7 @@ const { readFileSync, writeFileSync, existsSync, mkdirSync } = require('fs')
 const { join }   = require('path')
 const { randomUUID } = require('crypto')
 const { requireAuth }  = require('../middleware/auth.js')
-const { isManager, isSupervisor } = require('../config/roles.js')
+const { isManager, isSupervisor, isFullAdmin } = require('../config/roles.js')
 const { log } = require('../utils/logger.js')
 
 const router   = express.Router()
@@ -13,14 +13,15 @@ const TPLFILE  = join(DATA_DIR, 'bbcode-templates.json')
 // ─── Catégories avec logos ────────────────────────────────────────────────────
 
 const CATEGORIES = [
-  { id: 'emt',        label: 'EMT',               icon: 'https://zupimages.net/up/24/16/127a.png' },
-  { id: 'mers',       label: 'MERS',              icon: 'https://zupimages.net/up/24/16/u8bk.png' },
-  { id: 'med-gen',    label: 'Médecine Générale', icon: 'https://zupimages.net/up/23/35/br9g.png' },
-  { id: 'psy',        label: 'Psychiatrie',       icon: 'https://zupimages.net/up/24/16/rn70.png' },
-  { id: 'chirurgie',  label: 'Chirurgie',         icon: 'https://zupimages.net/up/24/16/aghk.png' },
-  { id: 'med-legale', label: 'Médecine Légale',   icon: 'https://zupimages.net/up/23/30/x0x4.png' },
-  { id: 'rh',         label: 'RH',                icon: 'https://zupimages.net/up/25/45/s9h6.png' },
-  { id: 'autres',     label: 'Autres',            icon: 'https://i.ibb.co/Zzzf4jmv/5895032.png' },
+  { id: 'emt',        label: 'EMT',                    icon: 'https://zupimages.net/up/24/16/127a.png' },
+  { id: 'mers',       label: 'MERS',                   icon: 'https://zupimages.net/up/24/16/u8bk.png' },
+  { id: 'med-gen',    label: 'Médecine Générale',      icon: 'https://zupimages.net/up/23/35/br9g.png' },
+  { id: 'psy',        label: 'Psychiatrie',            icon: 'https://zupimages.net/up/24/16/rn70.png' },
+  { id: 'chirurgie',  label: 'Chirurgie',              icon: 'https://zupimages.net/up/24/16/aghk.png' },
+  { id: 'med-legale', label: 'Médecine Légale',        icon: 'https://zupimages.net/up/23/30/x0x4.png' },
+  { id: 'rh',         label: 'RH',                    icon: 'https://zupimages.net/up/25/45/s9h6.png' },
+  { id: 'direction',  label: 'Direction Etablissement', icon: 'https://zupimages.net/up/25/45/s9h6.png', restricted: true },
+  { id: 'autres',     label: 'Autres',                icon: 'https://i.ibb.co/Zzzf4jmv/5895032.png' },
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -88,7 +89,9 @@ function formatValue(value, type, defaultVal = '') {
 // GET /api/bbcode/categories
 router.get('/categories', requireAuth, (req, res) => {
   const templates = loadTemplates()
-  const cats = CATEGORIES.map(c => ({
+  const fullAdmin = isFullAdmin(req.user?.roles || [])
+  const visibleCats = CATEGORIES.filter(c => !c.restricted || fullAdmin)
+  const cats = visibleCats.map(c => ({
     ...c,
     count: templates.filter(t => t.categoryId === c.id).length,
   }))
@@ -98,9 +101,16 @@ router.get('/categories', requireAuth, (req, res) => {
 // GET /api/bbcode/templates
 router.get('/templates', requireAuth, (req, res) => {
   const { categoryId } = req.query
+  const fullAdmin = isFullAdmin(req.user?.roles || [])
   let t = loadTemplates()
+  // Filter restricted-category templates for non-full-admins
+  if (!fullAdmin) {
+    const restricted = new Set(CATEGORIES.filter(c => c.restricted).map(c => c.id))
+    t = t.filter(x => !restricted.has(x.categoryId))
+  }
   if (categoryId) t = t.filter(x => x.categoryId === categoryId)
-  res.json({ templates: t, categories: CATEGORIES })
+  const visibleCats = CATEGORIES.filter(c => !c.restricted || fullAdmin)
+  res.json({ templates: t, categories: visibleCats })
 })
 
 // GET /api/bbcode/templates/:id
@@ -118,8 +128,10 @@ router.post('/templates', requireAuth, (req, res) => {
   const { title, categoryId, description, bbcode, sections } = req.body || {}
   if (!title?.trim())  return res.status(400).json({ error: 'Titre requis' })
   if (!bbcode?.trim()) return res.status(400).json({ error: 'Contenu BBCode requis' })
-  if (!CATEGORIES.find(c => c.id === categoryId))
-    return res.status(400).json({ error: 'Catégorie invalide' })
+  const cat = CATEGORIES.find(c => c.id === categoryId)
+  if (!cat) return res.status(400).json({ error: 'Catégorie invalide' })
+  if (cat.restricted && !isFullAdmin(req.user?.roles || []))
+    return res.status(403).json({ error: 'Catégorie réservée à la Direction' })
 
   const tpl = {
     id:            randomUUID(),
@@ -152,10 +164,15 @@ router.put('/templates/:id', requireAuth, (req, res) => {
     return res.status(403).json({ error: 'Seul le créateur ou un manager peut modifier cette template' })
 
   const { title, categoryId, description, bbcode, sections } = req.body || {}
+  // Prevent non-full-admins from moving templates to/from restricted categories
+  const targetCatId = CATEGORIES.find(c => c.id === categoryId) ? categoryId : t.categoryId
+  const targetCat   = CATEGORIES.find(c => c.id === targetCatId)
+  if (targetCat?.restricted && !isFullAdmin(req.user?.roles || []))
+    return res.status(403).json({ error: 'Catégorie réservée à la Direction' })
   all[idx] = {
     ...t,
-    title:       title?.trim()                              ?? t.title,
-    categoryId:  CATEGORIES.find(c => c.id === categoryId) ? categoryId : t.categoryId,
+    title:       title?.trim()  ?? t.title,
+    categoryId:  targetCatId,
     description: description?.trim()                       ?? t.description,
     bbcode:      bbcode                                     ?? t.bbcode,
     sections:    ensureTokens(sections                      ?? t.sections),

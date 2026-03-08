@@ -1110,6 +1110,25 @@ a.nav-item { text-decoration: none; }
 .team-member-arrow { color: rgba(255,255,255,0.2); flex-shrink: 0; }
 .team-member-card:hover .team-member-arrow { color: var(--orange); }
 
+.team-member-hosp-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+.team-member-hosp-pill {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.07);
+  color: var(--muted);
+  letter-spacing: 0.03em;
+}
+.team-member-hosp-pill.pillier { background: rgba(78,155,255,0.15); color: #4e9bff; }
+.team-member-hosp-pill.meds    { background: rgba(62,207,142,0.15); color: #3ecf8e; }
+.team-member-hosp-pill.sandy   { background: rgba(251,191,36,0.15);  color: #fbbf24; }
+
 /* Member search */
 .member-search-wrap {
   margin-left: auto;
@@ -1624,6 +1643,36 @@ a.nav-item { text-decoration: none; }
   font-style: italic;
   padding: 8px 0;
 }
+.personnel-log-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 7px 12px;
+  margin-bottom: 14px;
+  color: var(--muted);
+}
+.personnel-log-search {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 13px;
+}
+.personnel-log-search::placeholder { color: var(--muted); }
+.personnel-log-search-clear {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 2px;
+  line-height: 1;
+}
+.personnel-log-search-clear:hover { color: var(--text); }
 
 /* Modal footer / demote */
 .personnel-modal-footer {

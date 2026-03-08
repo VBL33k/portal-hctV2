@@ -22,20 +22,21 @@ const ROLE_IDS = {
 }
 
 // Niveau hiérarchique (plus grand = plus élevé)
+// Note: MEDECIN retiré de la hiérarchie (rôle cumulatif Discord, pas un grade spécifique)
+// Note: SHIFT_SPV > HDP pour que Shift Supervisor ait priorité quand les deux rôles sont présents
 const ROLE_HIERARCHY = {
   [ROLE_IDS.SECURITE]:        0,
   [ROLE_IDS.INTERNE]:         1,
   [ROLE_IDS.JUNIOR_RESIDENT]: 2,
   [ROLE_IDS.RESIDENT]:        3,
-  [ROLE_IDS.MEDECIN]:         4,
   [ROLE_IDS.DOCTOR]:          5,
   [ROLE_IDS.SENIOR_DOCTOR]:   6,
   [ROLE_IDS.EMT_B]:           7,
   [ROLE_IDS.EMT_A]:           8,
   [ROLE_IDS.EMT_P]:           9,
   [ROLE_IDS.PROFESSEUR]:      10,
-  [ROLE_IDS.SHIFT_SPV]:       11,
-  [ROLE_IDS.HDP]:             12,
+  [ROLE_IDS.HDP]:             11,
+  [ROLE_IDS.SHIFT_SPV]:       12,
   [ROLE_IDS.DEPUTY_CHIEF]:    13,
   [ROLE_IDS.CHIEF]:           14,
   [ROLE_IDS.DEO]:             15,
@@ -100,9 +101,9 @@ function isAdmin(memberRoleIds = []) {
   return getUserLevel(memberRoleIds) >= ROLE_HIERARCHY[ROLE_IDS.DEO]
 }
 
-// Niveau minimum pour créer/gérer des templates BBCode
+// Niveau minimum pour créer/gérer des templates BBCode (HDP et supérieur)
 function isSupervisor(memberRoleIds = []) {
-  return getUserLevel(memberRoleIds) >= ROLE_HIERARCHY[ROLE_IDS.SHIFT_SPV]
+  return getUserLevel(memberRoleIds) >= ROLE_HIERARCHY[ROLE_IDS.HDP]
 }
 
 // Accès complet — Deputy Chief et supérieur (incluant RH_SIMPLE au même niveau 13)

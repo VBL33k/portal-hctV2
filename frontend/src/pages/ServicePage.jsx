@@ -133,7 +133,7 @@ function StatsRow({ stats, loading }) {
         <div className="svc-stat-label">7 derniers jours</div>
       </div>
       <div className="svc-stat">
-        <div className="svc-stat-val">{loading ? '—' : (s.last30DaysCount ?? 0)}</div>
+        <div className="svc-stat-val">{loading ? '—' : (s.last30DurationFormatted || '0 h')}</div>
         <div className="svc-stat-label">30 derniers jours</div>
       </div>
     </div>
@@ -452,6 +452,21 @@ export default function ServicePage() {
 
               <StatsRow stats={selectedMember.stats} loading={false} />
 
+              {/* Hospital breakdown in member detail */}
+              {selectedMember.stats?.hospitalBreakdown && (
+                <div className="hosp-breakdown">
+                  {Object.entries(selectedMember.stats.hospitalBreakdown).map(([h, d]) => (
+                    <div key={h} className={`hosp-breakdown-card ${h.toLowerCase()}`}>
+                      <span className={`shift-hosp-badge ${h.toLowerCase()}`}>{h}</span>
+                      <span className="hosp-breakdown-info">
+                        <span className="hosp-breakdown-count">{d.count} service{d.count !== 1 ? 's' : ''}</span>
+                        <span className="hosp-breakdown-dur">{d.durationFormatted}</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="svc-history-panel" style={{ marginTop: 16 }}>
                 <div className="svc-panel-title">
                   Services enregistrés
@@ -524,6 +539,15 @@ export default function ServicePage() {
                           <div className="team-member-stats">
                             <div className="team-member-count">{m.stats?.totalShifts ?? 0}</div>
                             <div className="team-member-hours">{m.stats?.totalDurationFormatted || '0 h'}</div>
+                            {m.stats?.hospitalBreakdown && (
+                              <div className="team-member-hosp-row">
+                                {Object.entries(m.stats.hospitalBreakdown).map(([h, d]) => d.count > 0 && (
+                                  <span key={h} className={`team-member-hosp-pill ${h.toLowerCase()}`}>
+                                    {h} {d.durationFormatted}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
                           <div className="team-member-arrow"><IconChevron /></div>
                         </div>

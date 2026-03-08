@@ -5,10 +5,20 @@ import Layout from '../components/Layout.jsx'
 
 const API = import.meta.env.VITE_API_URL || ''
 
-// SPV+ role IDs — pour afficher le module Créateur de templates
+// SPV+ role IDs — pour afficher le module Créateur de templates (HDP inclus)
 const SPV_ROLE_IDS = new Set([
   '1140657047126425660', // SHIFT_SPV
   '809086773326118952',  // HDP
+  '805518674806046733',  // DEPUTY_CHIEF
+  '805481782119104522',  // CHIEF
+  '805551419905015818',  // DEO
+  '805508029151313921',  // CEO
+  '1377632925939666974', // DRH
+  '1407313203326877696', // RH_SIMPLE
+])
+// Shift SPV+ role IDs — pour la note de service (HDP exclu)
+const SHIFT_SPV_ROLE_IDS = new Set([
+  '1140657047126425660', // SHIFT_SPV
   '805518674806046733',  // DEPUTY_CHIEF
   '805481782119104522',  // CHIEF
   '805551419905015818',  // DEO
@@ -27,6 +37,9 @@ const FULL_ADMIN_ROLE_IDS = new Set([
 ])
 function isSupervisor(user) {
   return (user?.roles || []).some(r => SPV_ROLE_IDS.has(r))
+}
+function isShiftSupervisor(user) {
+  return (user?.roles || []).some(r => SHIFT_SPV_ROLE_IDS.has(r))
 }
 function isFullAdmin(user) {
   return (user?.roles || []).some(r => FULL_ADMIN_ROLE_IDS.has(r))
@@ -365,7 +378,7 @@ export default function Dashboard() {
       </div>
 
       {/* Note de service */}
-      <ServiceNote canEdit={isSupervisor(user)} />
+      <ServiceNote canEdit={isShiftSupervisor(user)} />
 
       {/* Modules */}
       <div className="section-label">MODULES</div>

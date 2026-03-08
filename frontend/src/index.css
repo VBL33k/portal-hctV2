@@ -3127,8 +3127,14 @@ a.nav-item { text-decoration: none; }
   flex-wrap: wrap;
 }
 .bip-req-dot { opacity: 0.4; }
-.bip-req-accepted  { color: #4ade80; font-weight: 600; }
-.bip-req-completed { color: #86efac; font-weight: 600; }
+.bip-req-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.bip-req-meta-item svg { opacity: 0.55; }
+.bip-req-accepted  { color: #4ade80; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; }
+.bip-req-completed { color: #86efac; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; }
 
 /* Action buttons row */
 .bip-req-btns {

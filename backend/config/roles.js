@@ -106,6 +106,11 @@ function isSupervisor(memberRoleIds = []) {
   return getUserLevel(memberRoleIds) >= ROLE_HIERARCHY[ROLE_IDS.HDP]
 }
 
+// Notes de service — Shift Supervisor et supérieur (exclut HDP niveau 11)
+function isShiftSupervisor(memberRoleIds = []) {
+  return getUserLevel(memberRoleIds) >= ROLE_HIERARCHY[ROLE_IDS.SHIFT_SPV]
+}
+
 // Accès complet — Deputy Chief et supérieur (incluant RH_SIMPLE au même niveau 13)
 function isFullAdmin(memberRoleIds = []) {
   return getUserLevel(memberRoleIds) >= ROLE_HIERARCHY[ROLE_IDS.DEPUTY_CHIEF]
@@ -122,5 +127,6 @@ module.exports = {
   isManager,
   isAdmin,
   isSupervisor,
+  isShiftSupervisor,
   isFullAdmin,
 }

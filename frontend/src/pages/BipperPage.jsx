@@ -75,6 +75,46 @@ const IconTrash = () => (
     <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
   </svg>
 )
+const IconPin = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+  </svg>
+)
+const IconTag = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+    <line x1="7" y1="7" x2="7.01" y2="7"/>
+  </svg>
+)
+const IconUser = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+    <circle cx="12" cy="7" r="4"/>
+  </svg>
+)
+const IconUsers = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </svg>
+)
+const IconFlag = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+    <line x1="4" y1="22" x2="4" y2="15"/>
+  </svg>
+)
+const IconMessage = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  </svg>
+)
+const IconClock = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+  </svg>
+)
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function BipperPage() {
@@ -348,76 +388,86 @@ export default function BipperPage() {
                 </div>
               ) : (
                 <div className="bip-req-list">
-                  {requests.map(req => (
-                    <div key={req.id} className={`bip-req-card bip-req-card--${req.status}`}>
-                      <div className="bip-req-top">
-                        <div className="bip-req-unit">{req.unitLabel}</div>
-                        <div className="bip-req-badges">
-                          <span className={`bip-hosp-pill bip-hosp-pill--${req.hospital}`}>{req.hospitalLabel}</span>
-                          <span className={`bip-urg-pill ${URGENCY_CLASS[req.urgency]}`}>{req.urgency}</span>
-                          <span className={`bip-status-pill ${STATUS_CLASS[req.status]}`}>{STATUS_LABEL[req.status]}</span>
-                        </div>
-                      </div>
+                  {requests.map(req => {
+                    // Compat ancien format string / nouveau format array
+                    const acceptedNames = Array.isArray(req.acceptedByNames) && req.acceptedByNames.length
+                      ? req.acceptedByNames.join(', ')
+                      : (req.acceptedByName || null)
+                    const acceptCount = Array.isArray(req.acceptedByNames) ? req.acceptedByNames.length : (req.acceptedByName ? 1 : 0)
 
-                      <div className="bip-req-details">
-                        <span className="bip-req-detail-item">📍 {req.location}</span>
-                        <span className="bip-req-detail-item">🏷️ {req.interventionType}</span>
-                      </div>
-
-                      {req.info && (
-                        <div className="bip-req-info">💬 {req.info}</div>
-                      )}
-
-                      <div className="bip-req-footer">
-                        <div className="bip-req-meta">
-                          <span>Par {req.requestedByName}</span>
-                          <span className="bip-req-dot">·</span>
-                          <span>{timeAgo(req.createdAt)}</span>
-                          {req.acceptedByName && (
-                            <>
-                              <span className="bip-req-dot">·</span>
-                              <span className="bip-req-accepted">✅ {req.acceptedByName}</span>
-                            </>
-                          )}
-                          {req.completedByName && (
-                            <>
-                              <span className="bip-req-dot">·</span>
-                              <span className="bip-req-completed">✔️ {req.completedByName}</span>
-                            </>
-                          )}
+                    return (
+                      <div key={req.id} className={`bip-req-card bip-req-card--${req.status}`}>
+                        <div className="bip-req-top">
+                          <div className="bip-req-unit">{req.unitLabel}</div>
+                          <div className="bip-req-badges">
+                            <span className={`bip-hosp-pill bip-hosp-pill--${req.hospital}`}>{req.hospitalLabel}</span>
+                            <span className={`bip-urg-pill ${URGENCY_CLASS[req.urgency]}`}>{req.urgency}</span>
+                            <span className={`bip-status-pill ${STATUS_CLASS[req.status]}`}>{STATUS_LABEL[req.status]}</span>
+                          </div>
                         </div>
 
-                        <div className="bip-req-btns">
-                          {/* Seul bouton de transition disponible après acceptation */}
-                          {req.status === 'accepted' && (
-                            <button
-                              className="bip-action-btn bip-action-btn--done"
-                              onClick={() => markCompleted(req.id)}
-                            >
-                              Marquée comme terminée
-                            </button>
-                          )}
-                          {/* Bouton supprimer — Deputy Chief+ uniquement */}
-                          {canAdmin && confirmDelete !== req.id && (
-                            <button
-                              className="bip-action-btn bip-action-btn--delete"
-                              onClick={() => setConfirmDelete(req.id)}
-                              title="Supprimer"
-                            >
-                              <IconTrash />
-                            </button>
-                          )}
-                          {canAdmin && confirmDelete === req.id && (
-                            <div className="bip-confirm-del">
-                              <span>Supprimer ?</span>
-                              <button className="bip-action-btn bip-action-btn--delete" onClick={() => deleteBipper(req.id)}>Oui</button>
-                              <button className="bip-action-btn" onClick={() => setConfirmDelete(null)}>Non</button>
-                            </div>
-                          )}
+                        <div className="bip-req-details">
+                          <span className="bip-req-detail-item"><IconPin /> {req.location}</span>
+                          <span className="bip-req-detail-item"><IconTag /> {req.interventionType}</span>
+                        </div>
+
+                        {req.info && (
+                          <div className="bip-req-info"><IconMessage /> {req.info}</div>
+                        )}
+
+                        <div className="bip-req-footer">
+                          <div className="bip-req-meta">
+                            <span className="bip-req-meta-item"><IconUser /> {req.requestedByName}</span>
+                            <span className="bip-req-dot">·</span>
+                            <span className="bip-req-meta-item"><IconClock /> {timeAgo(req.createdAt)}</span>
+                            {acceptedNames && (
+                              <>
+                                <span className="bip-req-dot">·</span>
+                                <span className="bip-req-accepted">
+                                  <IconUsers /> {acceptCount > 1 ? `${acceptedNames} (${acceptCount})` : acceptedNames}
+                                </span>
+                              </>
+                            )}
+                            {req.completedByName && (
+                              <>
+                                <span className="bip-req-dot">·</span>
+                                <span className="bip-req-completed"><IconFlag /> {req.completedByName}</span>
+                              </>
+                            )}
+                          </div>
+
+                          <div className="bip-req-btns">
+                            {/* Seul bouton de transition disponible après acceptation */}
+                            {req.status === 'accepted' && (
+                              <button
+                                className="bip-action-btn bip-action-btn--done"
+                                onClick={() => markCompleted(req.id)}
+                              >
+                                <IconCheck /> Terminer
+                              </button>
+                            )}
+                            {/* Bouton supprimer — Deputy Chief+ uniquement */}
+                            {canAdmin && confirmDelete !== req.id && (
+                              <button
+                                className="bip-action-btn bip-action-btn--delete"
+                                onClick={() => setConfirmDelete(req.id)}
+                                title="Supprimer"
+                              >
+                                <IconTrash />
+                              </button>
+                            )}
+                            {canAdmin && confirmDelete === req.id && (
+                              <div className="bip-confirm-del">
+                                <span>Supprimer ?</span>
+                                <button className="bip-action-btn bip-action-btn--delete" onClick={() => deleteBipper(req.id)}>Oui</button>
+                                <button className="bip-action-btn" onClick={() => setConfirmDelete(null)}>Non</button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>

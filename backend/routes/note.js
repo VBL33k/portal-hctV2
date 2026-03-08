@@ -2,7 +2,7 @@ const express  = require('express')
 const { readFileSync, writeFileSync, existsSync, mkdirSync } = require('fs')
 const { join }  = require('path')
 const { requireAuth } = require('../middleware/auth.js')
-const { isSupervisor } = require('../config/roles.js')
+const { isShiftSupervisor } = require('../config/roles.js')
 
 const router   = express.Router()
 const DATA_DIR = join(__dirname, '..', 'data')
@@ -25,7 +25,7 @@ router.get('/', requireAuth, (req, res) => {
 
 // POST /api/note — Shift SPV+
 router.post('/', requireAuth, (req, res) => {
-  if (!isSupervisor(req.user?.roles || []))
+  if (!isShiftSupervisor(req.user?.roles || []))
     return res.status(403).json({ error: 'Réservé aux Shift Supervisors et supérieurs' })
 
   const { content } = req.body || {}
@@ -46,7 +46,7 @@ router.post('/', requireAuth, (req, res) => {
 
 // DELETE /api/note — Shift SPV+
 router.delete('/', requireAuth, (req, res) => {
-  if (!isSupervisor(req.user?.roles || []))
+  if (!isShiftSupervisor(req.user?.roles || []))
     return res.status(403).json({ error: 'Réservé aux Shift Supervisors et supérieurs' })
 
   if (existsSync(NOTE_FILE)) {

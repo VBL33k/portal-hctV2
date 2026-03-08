@@ -40,49 +40,69 @@ const URGENCY_COLORS = {
   'Élevée':   0xf97316,
   'Critique': 0xef4444,
 }
-const URGENCY_EMOJI = {
-  'Faible':   '🟢',
-  'Modérée':  '🟡',
-  'Élevée':   '🟠',
-  'Critique': '🔴',
+const URGENCY_BARS = {
+  'Faible':   '█░░░',
+  'Modérée':  '██░░',
+  'Élevée':   '███░',
+  'Critique': '████',
+}
+const URGENCY_LABEL = {
+  'Faible':   '🟢 Faible',
+  'Modérée':  '🟡 Modérée',
+  'Élevée':   '🟠 Élevée',
+  'Critique': '🔴 CRITIQUE',
 }
 
 function buildBipperEmbed(req) {
-  const color   = URGENCY_COLORS[req.urgency] || 0x5865F2
-  const emoji   = URGENCY_EMOJI[req.urgency]  || '⚠️'
-  const statusMap = {
-    pending:   '⏳ En attente',
-    accepted:  '✅ Acceptée',
-    completed: '✔️ Terminée',
-  }
+  const color = URGENCY_COLORS[req.urgency] || 0x5865F2
+  const bar   = URGENCY_BARS[req.urgency]   || '░░░░'
+
+  // Résoudre les noms des accepteurs (compat ancien format string / nouveau array)
+  const acceptedNames = Array.isArray(req.acceptedByNames) && req.acceptedByNames.length
+    ? req.acceptedByNames.join(', ')
+    : (req.acceptedByName || null)
+
+  const isCompleted = req.status === 'completed'
+  const isPending   = req.status === 'pending'
+
+  const statusLine = isCompleted
+    ? '```diff\n+ TERMINÉE\n```'
+    : isPending
+      ? '```fix\n  EN ATTENTE\n```'
+      : '```yaml\n  ACCEPTÉE\n```'
 
   const embed = new EmbedBuilder()
-    .setTitle(`🚨 DEMANDE DE RENFORT — ${req.unitLabel}`)
-    .setColor(req.status === 'completed' ? 0x22c55e : color)
+    .setTitle(`📡  DEMANDE DE RENFORT  —  ${req.unitLabel}`)
+    .setColor(isCompleted ? 0x22c55e : color)
     .setDescription(
-      req.status === 'completed'
-        ? '✔️ Cette demande de renfort a été marquée comme **terminée**.'
-        : 'Une demande de renfort a été émise depuis le portail HCT.'
+      isCompleted
+        ? `> ✅  Cette demande a été **clôturée** avec succès.\n${statusLine}`
+        : `> Une demande de renfort vient d'être émise depuis le **Portail HCT**.\n> Réagissez avec ✅ pour la prendre en charge.\n${statusLine}`
     )
     .addFields(
-      { name: '🏥 Hôpital',              value: req.hospitalLabel,    inline: true  },
-      { name: '📍 Localisation',         value: req.location,         inline: true  },
-      { name: "🏷️ Type d'intervention",  value: req.interventionType, inline: false },
-      { name: `${emoji} Niveau d'urgence`, value: req.urgency,        inline: true  },
-      { name: '📊 Statut',               value: statusMap[req.status] || req.status, inline: true },
-      { name: '👤 Demandé par',          value: req.requestedByName,  inline: true  },
+      { name: '🏥  Hôpital',             value: `**${req.hospitalLabel}**`,                         inline: true  },
+      { name: '📍  Localisation',        value: `\`${req.location}\``,                               inline: true  },
+      { name: '\u200b',                  value: '\u200b',                                            inline: true  },
+      { name: '🏷️  Intervention',       value: req.interventionType,                                inline: false },
+      { name: '⚡  Urgence',             value: `${URGENCY_LABEL[req.urgency] || req.urgency}  ${bar}`, inline: true  },
+      { name: '👤  Demandé par',         value: req.requestedByName,                                 inline: true  },
     )
-    .setFooter({ text: req.status === 'completed' ? 'HCT Healthcare Portal' : 'HCT Healthcare Portal · Réagissez ✅ pour accepter' })
+    .setFooter({ text: 'HCT Healthcare Portal  ·  #bipper' })
     .setTimestamp(new Date(req.createdAt))
 
   if (req.info) {
-    embed.addFields({ name: '💬 Infos complémentaires', value: req.info, inline: false })
+    embed.addFields({ name: '💬  Informations complémentaires', value: `> ${req.info}`, inline: false })
   }
-  if (req.acceptedByName) {
-    embed.addFields({ name: '✅ Accepté par', value: req.acceptedByName, inline: true })
+
+  if (acceptedNames) {
+    const label = (Array.isArray(req.acceptedByNames) && req.acceptedByNames.length > 1)
+      ? `✅  Pris en charge par (${req.acceptedByNames.length})`
+      : '✅  Pris en charge par'
+    embed.addFields({ name: label, value: `**${acceptedNames}**`, inline: true })
   }
+
   if (req.completedByName) {
-    embed.addFields({ name: '✔️ Terminé par', value: req.completedByName, inline: true })
+    embed.addFields({ name: '🏁  Clôturé par', value: `**${req.completedByName}**`, inline: true })
   }
 
   return embed
@@ -240,7 +260,15 @@ client.on('messageReactionAdd', async (reaction, user) => {
   if (idx === -1) return
 
   const req = requests[idx]
-  if (req.status !== 'pending') return
+  // Bloquer uniquement si déjà terminée
+  if (req.status === 'completed') return
+
+  // Initialiser les tableaux d'accepteurs si ancien format
+  if (!Array.isArray(requests[idx].acceptedBys))    requests[idx].acceptedBys    = []
+  if (!Array.isArray(requests[idx].acceptedByNames)) requests[idx].acceptedByNames = []
+
+  // Éviter le doublon (même personne réagit deux fois)
+  if (requests[idx].acceptedBys.includes(user.id)) return
 
   let accepterName = user.username
   try {
@@ -251,11 +279,16 @@ client.on('messageReactionAdd', async (reaction, user) => {
     }
   } catch {}
 
-  requests[idx].status          = 'accepted'
-  requests[idx].acceptedBy      = user.id
-  requests[idx].acceptedByName  = accepterName
-  requests[idx].acceptedAt      = new Date().toISOString()
-  requests[idx].updatedAt       = new Date().toISOString()
+  requests[idx].acceptedBys.push(user.id)
+  requests[idx].acceptedByNames.push(accepterName)
+
+  // Passer en "accepted" uniquement lors de la première prise en charge
+  if (requests[idx].status === 'pending') {
+    requests[idx].status    = 'accepted'
+    requests[idx].acceptedAt = new Date().toISOString()
+  }
+
+  requests[idx].updatedAt = new Date().toISOString()
   saveRequests(requests)
 
   // Mettre à jour l'embed Discord
@@ -263,7 +296,8 @@ client.on('messageReactionAdd', async (reaction, user) => {
     const channel = reaction.message.channel
     const msg     = await channel.messages.fetch(messageId)
     await msg.edit({ embeds: [buildBipperEmbed(requests[idx])] })
-    console.log(`✅ Bipper accepté [${req.id}] par ${accepterName}`)
+    const count = requests[idx].acceptedByNames.length
+    console.log(`✅ Bipper accepté [${req.id}] par ${accepterName} (total: ${count})`)
   } catch (err) {
     console.error('❌ Embed update error:', err.message)
   }

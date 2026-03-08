@@ -89,8 +89,8 @@ router.post('/', requireAuth, (req, res) => {
     discordMessageId:      null,
     discordChannelId:      hosp.channelId,
     discordCompletionSent: false,
-    acceptedBy:            null,
-    acceptedByName:        null,
+    acceptedBys:           [],
+    acceptedByNames:       [],
     acceptedAt:            null,
     createdAt:             new Date().toISOString(),
     updatedAt:             new Date().toISOString(),
@@ -117,10 +117,14 @@ router.patch('/:id', requireAuth, (req, res) => {
   requests[idx].status    = status
   requests[idx].updatedAt = new Date().toISOString()
 
-  if (status === 'accepted' && !requests[idx].acceptedBy) {
-    requests[idx].acceptedBy     = req.user.discordId
-    requests[idx].acceptedByName = req.user.name
-    requests[idx].acceptedAt     = new Date().toISOString()
+  if (status === 'accepted') {
+    if (!Array.isArray(requests[idx].acceptedBys))    requests[idx].acceptedBys    = []
+    if (!Array.isArray(requests[idx].acceptedByNames)) requests[idx].acceptedByNames = []
+    if (!requests[idx].acceptedBys.includes(req.user.discordId)) {
+      requests[idx].acceptedBys.push(req.user.discordId)
+      requests[idx].acceptedByNames.push(req.user.name)
+      if (!requests[idx].acceptedAt) requests[idx].acceptedAt = new Date().toISOString()
+    }
   }
 
   // Quand terminée → le bot doit mettre à jour l'embed

@@ -157,10 +157,10 @@ export default function Dashboard() {
       .catch(() => {})
   }, [])
 
-  // Personnel actif uniquement pour les Deputy Chief et supérieurs
+  // Personnel visible + actif uniquement pour les Deputy Chief et supérieurs
   const MODULES = isFullAdmin(user)
     ? MODULES_BASE.map(m => m.title === 'Personnel' ? { ...m, soon: false, to: '/personnel' } : m)
-    : MODULES_BASE
+    : MODULES_BASE.filter(m => m.title !== 'Personnel')
 
   const allModules = MODULES
     .sort((a, b) => (a.soon ? 1 : 0) - (b.soon ? 1 : 0))

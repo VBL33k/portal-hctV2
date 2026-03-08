@@ -80,11 +80,7 @@ const IconUsers = () => (
     <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
   </svg>
 )
-const IconBook = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-  </svg>
-)
+
 const IconChart = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
@@ -146,10 +142,6 @@ const MODULES_BASE = [
   { icon: <IconReceipt />,  title: 'Facturation',       desc: 'Gérez les factures et les paiements liés aux services médicaux.',   soon: true,  to: null },
 ]
 
-const MODULES_SPV = [
-  { icon: <IconBook />, title: 'Créateur de templates', desc: 'Créez et gérez les templates BBCode pour votre équipe.', soon: false, to: '/bbcode/builder' },
-]
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
@@ -165,10 +157,12 @@ export default function Dashboard() {
       .catch(() => {})
   }, [])
 
-  // Personnel est actif pour tous les utilisateurs authentifiés
-  const MODULES = MODULES_BASE.map(m => m.title === 'Personnel' ? { ...m, soon: false, to: '/personnel' } : m)
+  // Personnel actif uniquement pour les Deputy Chief et supérieurs
+  const MODULES = isFullAdmin(user)
+    ? MODULES_BASE.map(m => m.title === 'Personnel' ? { ...m, soon: false, to: '/personnel' } : m)
+    : MODULES_BASE
 
-  const allModules = (isSupervisor(user) ? [...MODULES, ...MODULES_SPV] : MODULES)
+  const allModules = MODULES
     .sort((a, b) => (a.soon ? 1 : 0) - (b.soon ? 1 : 0))
 
   return (

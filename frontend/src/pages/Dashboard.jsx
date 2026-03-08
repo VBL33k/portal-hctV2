@@ -157,6 +157,13 @@ const IconFileCode = () => (
     <polyline points="10 13 8 15 10 17"/><polyline points="14 13 16 15 14 17"/>
   </svg>
 )
+const IconRadio = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/>
+    <line x1="8" y1="23" x2="16" y2="23"/>
+  </svg>
+)
 
 // ─── ServiceNote component ────────────────────────────────────────────────────
 
@@ -284,6 +291,7 @@ const MODULES_BASE = [
   { icon: <IconHeart />,    title: 'Prise de service',  desc: 'Déclarez vos prises et fins de service au sein du centre médical.', soon: false, to: '/services' },
   { icon: <IconFileCode />, title: 'BBCode / Rapports', desc: 'Remplissez vos rapports depuis les templates BBCode disponibles.',  soon: false, to: '/bbcode/fill' },
   { icon: <IconBell />,     title: 'Annonces',          desc: "Retrouvez toutes les communications officielles de la direction.",   soon: false, to: '/annonces' },
+  { icon: <IconRadio />,    title: 'Bipper',            desc: 'Envoyez des demandes de renfort aux unités via le canal radio Discord.', soon: false, to: '/bipper' },
   { icon: <IconUsers />,    title: 'Personnel',         desc: "Annuaire complet des membres, logs d'activité et gestion RH.",      soon: true,  to: null },
   { icon: <IconChart />,    title: 'Statistiques',      desc: "Tableaux de bord et métriques d'activité du centre.",               soon: true,  to: null },
   { icon: <IconReceipt />,  title: 'Facturation',       desc: 'Gérez les factures et les paiements liés aux services médicaux.',   soon: true,  to: null },

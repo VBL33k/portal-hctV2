@@ -10,6 +10,7 @@ import PersonnelPage from './pages/PersonnelPage.jsx'
 import AnnouncementsPage from './pages/AnnouncementsPage.jsx'
 import SettingsPage from './pages/SettingsPage.jsx'
 import AuthCallback from './pages/AuthCallback.jsx'
+import BipperPage from './pages/BipperPage.jsx'
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
         <Route path="/personnel"      element={<PrivateRoute><PersonnelPage /></PrivateRoute>} />
         <Route path="/annonces"       element={<PrivateRoute><AnnouncementsPage /></PrivateRoute>} />
         <Route path="/parametres"     element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
+        <Route path="/bipper"         element={<PrivateRoute><BipperPage /></PrivateRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AuthProvider>

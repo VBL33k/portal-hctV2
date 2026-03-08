@@ -83,6 +83,7 @@ app.use('/api/admin',         require('./routes/admin.js'))
 app.use('/api/announcements', require('./routes/announcements.js'))
 app.use('/api/settings',      require('./routes/settings.js'))
 app.use('/api/note',          require('./routes/note.js'))
+app.use('/api/bipper',        require('./routes/bipper.js'))
 
 // Serve uploaded avatars
 app.use('/api/uploads', require('express').static(require('path').join(__dirname, 'uploads')))

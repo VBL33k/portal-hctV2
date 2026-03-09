@@ -244,24 +244,31 @@ function ServiceNote({ canEdit }) {
   }
 
   function parseInline(text) {
-    const regex = /(\*\*[^*\n]+\*\*|\*[^*\n]+\*|~~[^~\n]+~~|\[c=#[0-9a-fA-F]{3,6}\][^\[]*\[\/c\])/g
-    const parts = []
-    let last = 0, m
-    while ((m = regex.exec(text)) !== null) {
-      if (m.index > last) parts.push(text.slice(last, m.index))
-      const token = m[0]
-      if (token.startsWith('**'))       parts.push(<strong key={m.index}>{token.slice(2, -2)}</strong>)
-      else if (token.startsWith('~~'))  parts.push(<s key={m.index}>{token.slice(2, -2)}</s>)
-      else if (token.startsWith('[c=')) {
-        const hex   = token.match(/\[c=(#[0-9a-fA-F]{3,6})\]/)[1]
-        const inner = token.slice(token.indexOf(']') + 1, -4)
-        parts.push(<span key={m.index} style={{ color: hex }}>{inner}</span>)
-      }
-      else                              parts.push(<em key={m.index}>{token.slice(1, -1)}</em>)
-      last = m.index + token.length
+    if (!text) return []
+    const patterns = [
+      { re: /\*\*([^*\n]+?)\*\*/,                         type: 'bold'   },
+      { re: /(?<!\*)\*(?!\*)([^*\n]+?)(?<!\*)\*(?!\*)/,   type: 'italic' },
+      { re: /~~([^~\n]+?)~~/,                              type: 'strike' },
+      { re: /\[c=(#[0-9a-fA-F]{3,6})\]([^\[]*?)\[\/c\]/,  type: 'color'  },
+    ]
+    let best = null, bestIdx = Infinity
+    for (const p of patterns) {
+      const m = p.re.exec(text)
+      if (m && m.index < bestIdx) { best = { ...p, match: m }; bestIdx = m.index }
     }
-    if (last < text.length) parts.push(text.slice(last))
-    return parts.length ? parts : text
+    if (!best) return [text]
+    const { match, type } = best
+    const result = []
+    if (match.index > 0) result.push(text.slice(0, match.index))
+    const k     = `${match.index}-${type}`
+    const inner = parseInline(type === 'color' ? match[2] : match[1])
+    if      (type === 'bold')   result.push(<strong key={k}>{inner}</strong>)
+    else if (type === 'italic') result.push(<em     key={k}>{inner}</em>)
+    else if (type === 'strike') result.push(<s      key={k}>{inner}</s>)
+    else if (type === 'color')  result.push(<span   key={k} style={{ color: match[1] }}>{inner}</span>)
+    if (match.index + match[0].length < text.length)
+      result.push(...parseInline(text.slice(match.index + match[0].length)))
+    return result
   }
 
   function renderNoteContent(content) {

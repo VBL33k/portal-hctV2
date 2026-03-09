@@ -244,15 +244,20 @@ function ServiceNote({ canEdit }) {
   }
 
   function parseInline(text) {
-    const regex = /(\*\*[^*\n]+\*\*|\*[^*\n]+\*|~~[^~\n]+~~)/g
+    const regex = /(\*\*[^*\n]+\*\*|\*[^*\n]+\*|~~[^~\n]+~~|\[c=#[0-9a-fA-F]{3,6}\][^\[]*\[\/c\])/g
     const parts = []
     let last = 0, m
     while ((m = regex.exec(text)) !== null) {
       if (m.index > last) parts.push(text.slice(last, m.index))
       const token = m[0]
-      if (token.startsWith('**'))      parts.push(<strong key={m.index}>{token.slice(2, -2)}</strong>)
-      else if (token.startsWith('~~')) parts.push(<s key={m.index}>{token.slice(2, -2)}</s>)
-      else                             parts.push(<em key={m.index}>{token.slice(1, -1)}</em>)
+      if (token.startsWith('**'))       parts.push(<strong key={m.index}>{token.slice(2, -2)}</strong>)
+      else if (token.startsWith('~~'))  parts.push(<s key={m.index}>{token.slice(2, -2)}</s>)
+      else if (token.startsWith('[c=')) {
+        const hex   = token.match(/\[c=(#[0-9a-fA-F]{3,6})\]/)[1]
+        const inner = token.slice(token.indexOf(']') + 1, -4)
+        parts.push(<span key={m.index} style={{ color: hex }}>{inner}</span>)
+      }
+      else                              parts.push(<em key={m.index}>{token.slice(1, -1)}</em>)
       last = m.index + token.length
     }
     if (last < text.length) parts.push(text.slice(last))
@@ -334,6 +339,25 @@ function ServiceNote({ canEdit }) {
             <button type="button" className="svc-note-tool svc-note-tool--strike"  title="Barré"    onMouseDown={e => { e.preventDefault(); applyFormat('~~', '~~') }}>S</button>
             <span className="svc-note-tool-sep" />
             <button type="button" className="svc-note-tool svc-note-tool--heading" title="Titre (ligne courante)" onMouseDown={e => { e.preventDefault(); applyFormat('', '', true) }}>H1</button>
+            <span className="svc-note-tool-sep" />
+            {[
+              { hex: '#ef4444', label: 'Rouge'  },
+              { hex: '#f97316', label: 'Orange' },
+              { hex: '#eab308', label: 'Jaune'  },
+              { hex: '#22c55e', label: 'Vert'   },
+              { hex: '#38bdf8', label: 'Bleu'   },
+              { hex: '#a855f7', label: 'Violet' },
+              { hex: '#ec4899', label: 'Rose'   },
+            ].map(c => (
+              <button
+                key={c.hex}
+                type="button"
+                className="svc-note-color"
+                title={c.label}
+                style={{ background: c.hex }}
+                onMouseDown={e => { e.preventDefault(); applyFormat(`[c=${c.hex}]`, '[/c]') }}
+              />
+            ))}
           </div>
           <textarea
             ref={noteRef}

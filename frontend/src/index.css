@@ -720,13 +720,29 @@ body {
   flex-shrink: 0;
 }
 
+/* Swatches couleur */
+.svc-note-color {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: transform 0.12s, border-color 0.12s;
+}
+.svc-note-color:hover {
+  transform: scale(1.35);
+  border-color: rgba(255,255,255,0.55);
+}
+
 /* Contenu rendu de la note */
 .svc-note-body { margin-bottom: 8px; }
 .svc-note-title {
-  font-size: 0.98rem;
+  font-size: 1.18rem;
   font-weight: 800;
   color: var(--orange);
-  margin: 8px 0 3px;
+  margin: 10px 0 4px;
   letter-spacing: 0.02em;
 }
 .svc-note-title:first-child { margin-top: 0; }

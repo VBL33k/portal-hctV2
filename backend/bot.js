@@ -47,6 +47,8 @@ const URGENCY_BARS = {
   'Critique': '████  CRITIQUE',
 }
 
+const BLANK = { name: '\u200b', value: '\u200b', inline: false }
+
 function buildBipperEmbed(req) {
   const color = URGENCY_COLORS[req.urgency] || 0x5865F2
   const bar   = URGENCY_BARS[req.urgency]   || req.urgency
@@ -59,45 +61,62 @@ function buildBipperEmbed(req) {
   const isCompleted = req.status === 'completed'
   const isPending   = req.status === 'pending'
 
-  const statusBlock = isCompleted
+  const statusLine = isCompleted
     ? '```diff\n+ TERMINÉE\n```'
     : isPending
-      ? '```fix\n  EN ATTENTE\n```'
-      : '```yaml\n  PRISE EN CHARGE\n```'
+      ? '```fix\n⏳  EN ATTENTE\n```'
+      : '```yaml\n✔  PRISE EN CHARGE\n```'
 
   const description = isCompleted
-    ? `> Cette demande a été **clôturée** avec succès.\n${statusBlock}`
-    : `> Demande émise depuis le **Portail HCT**.\n> Réagissez avec ✅ pour la prendre en charge.\n${statusBlock}`
+    ? `> Cette demande a été **clôturée** avec succès.\n\n${statusLine}`
+    : `> Demande émise depuis le **Portail HCT**.\n> Réagissez avec ✅ pour la prendre en charge.\n\n${statusLine}`
 
   const embed = new EmbedBuilder()
-    .setTitle(`DEMANDE DE RENFORT  ·  ${req.unitLabel}`)
+    .setTitle(`🚨  DEMANDE DE RENFORT  ·  ${req.unitLabel}`)
     .setColor(isCompleted ? 0x22c55e : color)
     .setDescription(description)
     .addFields(
-      { name: 'Hôpital',       value: `**${req.hospitalLabel}**`, inline: true  },
-      { name: 'Localisation',  value: `\`${req.location}\``,       inline: true  },
-      { name: '\u200b',        value: '\u200b',                    inline: true  },
-      { name: 'Intervention',  value: req.interventionType,        inline: false },
-      { name: 'Urgence',       value: `\`\`\`${bar}\`\`\``,        inline: true  },
-      { name: 'Demandé par',   value: req.requestedByName,         inline: true  },
+      // ── Localisation ──
+      { name: '🏥  Secteur',        value: `**${req.hospitalLabel}**`, inline: true },
+      { name: '📍  Localisation',   value: `\`${req.location}\``,      inline: true },
+      { name: '\u200b',             value: '\u200b',                   inline: true },
+
+      // ── Intervention ──
+      BLANK,
+      { name: '🩺  Intervention',   value: req.interventionType,       inline: false },
+
+      // ── Urgence + Requérant ──
+      BLANK,
+      { name: '⚡  Urgence',        value: `\`\`\`${bar}\`\`\``,       inline: true },
+      { name: '👤  Requérant',      value: req.requestedByName,        inline: true },
+
+      // ── ID Intervention ──
+      BLANK,
+      { name: '🔢  ID Intervention', value: `\`${req.id}\``,           inline: false },
     )
-    .setFooter({ text: 'HCT Healthcare  ·  Portail Bipper' })
+    .setFooter({ text: 'HCT Healthcare  ·  Transmission automatique via Portail HCT' })
     .setTimestamp(new Date(req.createdAt))
 
   if (req.info) {
-    embed.addFields({ name: 'Informations complémentaires', value: `> ${req.info}`, inline: false })
+    embed.addFields(
+      BLANK,
+      { name: '📋  Informations complémentaires', value: `> ${req.info}`, inline: false },
+    )
   }
 
   if (acceptedNames) {
     const count = Array.isArray(req.acceptedByNames) ? req.acceptedByNames.length : 1
     const label = count > 1
-      ? `Pris en charge par (${count})`
-      : 'Pris en charge par'
-    embed.addFields({ name: label, value: `**${acceptedNames}**`, inline: true })
+      ? `✅  Pris en charge par (${count})`
+      : '✅  Pris en charge par'
+    embed.addFields(
+      BLANK,
+      { name: label, value: `**${acceptedNames}**`, inline: false },
+    )
   }
 
   if (req.completedByName) {
-    embed.addFields({ name: 'Clôturé par', value: `**${req.completedByName}**`, inline: true })
+    embed.addFields({ name: '🏁  Clôturé par', value: `**${req.completedByName}**`, inline: true })
   }
 
   return embed

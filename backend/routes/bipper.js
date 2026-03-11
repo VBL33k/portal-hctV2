@@ -22,8 +22,8 @@ const UNITS = [
 
 // Pour l'instant tout va dans le canal de test
 const HOSPITALS = [
-  { id: 'tmc', label: 'TMC', channelId: '1480261168777007156' },
-  { id: 'nmh', label: 'NMH', channelId: '1480261168777007156' },
+  { id: 'tmc', label: 'Townsend Medical Center', channelId: '1480261168777007156' },
+  { id: 'nmh', label: 'Nashville Memorium Hospital', channelId: '1480261168777007156' },
 ]
 
 function loadRequests() {

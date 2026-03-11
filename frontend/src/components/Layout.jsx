@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
 
 // SPV+ role IDs (Shift Supervisor et supérieurs)
@@ -105,6 +106,16 @@ const IconLogout = () => (
     <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
   </svg>
 )
+const IconMenu = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+)
+const IconX = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+)
 
 // ─── Navigation config ────────────────────────────────────────────────────────
 
@@ -137,15 +148,26 @@ const NAV_LINKS_ALL = [
 
 export default function Layout({ title, children }) {
   const { user, logout } = useAuth()
+  const location = useLocation()
   const initials    = (user?.prenom?.[0] || user?.username?.[0] || '?').toUpperCase()
   const canBuild    = isSupervisor(user)
   const canSeeAdmin = isFullAdmin(user)
 
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Ferme le sidebar à chaque changement de route
+  useEffect(() => { setSidebarOpen(false) }, [location.pathname])
+
   return (
     <div className="dashboard">
 
+      {/* ── Overlay mobile ── */}
+      {sidebarOpen && (
+        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
+      )}
+
       {/* ── Sidebar ── */}
-      <aside className="sidebar">
+      <aside className={`sidebar${sidebarOpen ? ' sidebar--open' : ''}`}>
         <div className="sidebar-top">
           <div className="sidebar-brand">
             <img
@@ -226,7 +248,12 @@ export default function Layout({ title, children }) {
 
         {/* Topbar */}
         <header className="topbar">
-          <span className="topbar-left">{title}</span>
+          <div className="topbar-left-group">
+            <button className="hamburger-btn" onClick={() => setSidebarOpen(o => !o)}>
+              {sidebarOpen ? <IconX /> : <IconMenu />}
+            </button>
+            <span className="topbar-left">{title}</span>
+          </div>
 
           <div className="topbar-right">
             <div className="topbar-initials">{initials}</div>
@@ -235,7 +262,7 @@ export default function Layout({ title, children }) {
             <div className="topbar-sep" />
             <button className="logout-btn" onClick={logout}>
               <IconLogout />
-              Déconnexion
+              <span className="logout-label">Déconnexion</span>
             </button>
           </div>
         </header>
